@@ -27,30 +27,36 @@ namespace Ped{
 	class Model
 	{
 	public:
+	  struct thread_info
+	  {                     // Used as argument to thread_start() 
+	    int thread_num;     // Application-defined thread # 
+	    int num_threads; // From command-line argument 
+	  };
 
-		// Sets everything up
-		void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
+	  // Sets everything up
+	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
 		
-		// Coordinates a time step in the scenario: move all agents by one step (if applicable).
-		void tick();
+	  void *preComputeFunc(thread_info ti);
+	  // Coordinates a time step in the scenario: move all agents by one step (if applicable).
+	  void tick();
 
-		// Returns the agents of this scenario
-		const std::vector<Tagent*> getAgents() const { return agents; };
+	  // Returns the agents of this scenario
+	  const std::vector<Tagent*> getAgents() const { return agents; };
 
-		// Adds an agent to the tree structure
-		void placeAgent(const Ped::Tagent *a);
+	  // Adds an agent to the tree structure
+	  void placeAgent(const Ped::Tagent *a);
 
-		// Cleans up the tree and restructures it. Worth calling every now and then.
-		void cleanup();
-		~Model();
+	  // Cleans up the tree and restructures it. Worth calling every now and then.
+	  void cleanup();
+	  ~Model();
 
-		// Returns the heatmap visualizing the density of agents
-		int const * const * getHeatmap() const { return blurred_heatmap; };
-		int getHeatmapSize() const;
+	  // Returns the heatmap visualizing the density of agents
+	  int const * const * getHeatmap() const { return blurred_heatmap; };
+	  int getHeatmapSize() const;
 
 	private:
 
-		// Denotes which implementation (sequential, parallel implementations..)
+	  // Denotes which implementation (sequential, parallel implementations..)
 		// should be used for calculating the desired positions of
 		// agents (Assignment 1)
 		IMPLEMENTATION implementation;

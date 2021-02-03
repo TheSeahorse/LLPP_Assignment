@@ -50,13 +50,37 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 }
 
 
+void *Ped::Model::preComputeFunc(Ped::Model::thread_info ti)
+{
+    std::vector<Tagent*> agents = getAgents();
+    int num_agents = agents.size();
+    int num_threads = ti.num_threads;
+    int thread_id = ti.thread_num;
+    int slice = num_agents/num_threads;
+    std::cout << "\nnum_agents: " << num_agents;
+    std::cout << "\nthread id: " << thread_id;
+    std::cout << "\nslice: " << slice;
+    computeAgentPositions(slice * thread_id, slice * (thread_id + 1), agents);
+    return NULL;
+}
+
+
+void *thread_startup(void *thread_inf)
+{
+    Ped::Model::thread_info ti = *static_cast<Ped::Model::thread_info*>(thread_inf);
+    Ped::Model test;
+    test.preComputeFunc(ti);
+    return NULL;
+}
+
+
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
   int num_threads = 8; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
-
+  std::cout << "\nnum_agents in tick: " << agents.size();
   switch(this->implementation){
   case SEQ:
     {
@@ -76,31 +100,21 @@ void Ped::Model::tick()
       break;
     }
   case PTHREAD:
-    {
-      int num_agents = agents.size();
-      int one_slice = num_agents/num_threads;
-      
-      
-      std::thread first(computeAgentPositions, 0, one_slice, agents);
-      std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
-      std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
-      std::thread fourth(computeAgentPositions, one_slice*3, one_slice*4, agents);
-      std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
-      std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
-      std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
-      std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
-      first.join();
-      second.join();
-      third.join();
-      fourth.join();
-      fifth.join();
-      sixth.join();
-      seventh.join();
-      eigth.join();
-      if (num_threads > 8)
+    { 
+      thread_info ti;
+      pthread_t threads[num_threads];
+      for (int i = 0; i < num_threads; i++)
 	{
-	  std::cout<<"TOO MANY THREADS!!";
+	  ti.num_threads = num_threads;
+	  ti.thread_num = i;
+	  pthread_create(&threads[i], NULL, thread_startup, &ti);
 	}
+
+      for (int i = 0; i < num_threads; i++)
+	{
+	  pthread_join(threads[i], NULL);
+	}
+      
       break;
     }
   case CUDA:
