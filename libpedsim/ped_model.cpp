@@ -52,44 +52,55 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 
 void Ped::Model::tick()
 {
+  // assuming threads between 2-8
+  int num_threads = 8; //change this variable to chose number of threads we run on
+
   std::vector<Tagent*> agents = getAgents();
+
   switch(this->implementation){
   case SEQ:
     {
-      //std::cout<<"serial\n";
       computeAgentPositions(0, agents.size(), agents);
       break;
     }
   case OMP:
     {
-      //std::cout<<"openmp\n";
+      omp_set_num_threads(num_threads);
 #pragma omp parallel for
       for (int i = 0; i < agents.size(); i++) 
 	{
-
 	  agents[i]->computeNextDesiredPosition();
 	  agents[i]->setX(agents[i]->getDesiredX());
 	  agents[i]->setY(agents[i]->getDesiredY());
-    
 	}
-    
       break;
     }
   case PTHREAD:
     {
       int num_agents = agents.size();
-      int one_fourth = num_agents/4;
-      int two_fourths = num_agents/2;
-      int three_fourths = num_agents - one_fourth;
-      std::thread first(computeAgentPositions, 0, one_fourth, agents);
-      std::thread second(computeAgentPositions, one_fourth, two_fourths, agents);
-      std::thread third(computeAgentPositions, two_fourths, three_fourths, agents);
-      std::thread fourth(computeAgentPositions, three_fourths, num_agents, agents);
+      int one_slice = num_agents/num_threads;
+      
+      
+      std::thread first(computeAgentPositions, 0, one_slice, agents);
+      std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
+      std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
+      std::thread fourth(computeAgentPositions, one_slice*3, one_slice*4, agents);
+      std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
+      std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
+      std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
+      std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
       first.join();
       second.join();
       third.join();
       fourth.join();
-    
+      fifth.join();
+      sixth.join();
+      seventh.join();
+      eigth.join();
+      if (num_threads > 8)
+	{
+	  std::cout<<"TOO MANY THREADS!!";
+	}
       break;
     }
   case CUDA:
@@ -101,7 +112,6 @@ void Ped::Model::tick()
       break;
     }
   }
-
 }
 
 
