@@ -31,6 +31,9 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	// Sets the chosen implemenation. Standard in the given code is SEQ
 	this->implementation = implementation;
 
+	//
+	this->tick_nr = 0;
+	
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
 }
@@ -40,43 +43,43 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 {
   for (start; start < end; start++) 
-      {
-	agents[start]->computeNextDesiredPosition();
-	agents[start]->setX(agents[start]->getDesiredX());
-	agents[start]->setY(agents[start]->getDesiredY());
-      }
+    {
+      agents[start]->computeNextDesiredPosition();
+      agents[start]->setX(agents[start]->getDesiredX());
+      agents[start]->setY(agents[start]->getDesiredY());
+    }
 }
 
 
-void *Ped::Model::preComputeFunc(Ped::Model::thread_info ti)
+void preComputeFunc(Ped::Model::thread_info ti)
 {
-    int slice = ti.agents.size() / ti.num_threads;
-    if (ti.num_threads == ti.thread_num + 1)
+  int slice = ti.agents.size() / ti.num_threads;
+  if (ti.num_threads == ti.thread_num + 1)
     {
       computeAgentPositions(slice * ti.thread_num, ti.agents.size(), ti.agents); 
+      std::cout << "\n" << ti.thread_num;
     }
-    else
+  else
     {
       computeAgentPositions(slice * ti.thread_num, slice * (ti.thread_num + 1), ti.agents);
+      std::cout << "\n" << ti.thread_num;
     }
-
-    return NULL;
+  pthread_exit(NULL);
 }
 
 
 void *thread_startup(void *thread_inf)
 {
-    Ped::Model::thread_info ti = *static_cast<Ped::Model::thread_info*>(thread_inf);
-    Ped::Model test;
-    test.preComputeFunc(ti);
-    return NULL;
+  Ped::Model::thread_info ti = *static_cast<Ped::Model::thread_info*>(thread_inf);
+  preComputeFunc(ti);
 }
 
 
 void Ped::Model::tick()
 {
+  this->tick_nr = this->tick_nr + 1;
   // assuming threads between 2-8
-  int num_threads = 2; //change this variable to chose number of threads we run on
+  int num_threads = 8; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
   switch(this->implementation){
@@ -99,22 +102,25 @@ void Ped::Model::tick()
     }
   case PTHREAD:
     { 
-      thread_info ti;
+      Ped::Model::thread_info ti;
       pthread_t threads[num_threads];
       for (int i = 0; i < num_threads; i++)
 	{
-	  //std::cout << "\nloop: " << i;
+	  //printf("%d", i);
+	  //std::cout << "\nloop: ";
 	  ti.agents = agents;
 	  ti.num_threads = num_threads;
 	  ti.thread_num = i;
-	  pthread_create(&threads[i], NULL, thread_startup, &ti);
+	  int y = pthread_create(&threads[i], NULL, &thread_startup, &ti);
 	}
 
       for (int i = 0; i < num_threads; i++)
 	{
-	  pthread_join(threads[i], NULL);
+	  int x = pthread_join(threads[i], NULL);
+	  //std::cout << "\nthread nr: " << i << " success?: " << x;
 	}
       
+      std::cout << "\ntick_nr: " << this->tick_nr;
       break;
     }
   case CUDA:

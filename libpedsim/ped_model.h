@@ -36,8 +36,7 @@ namespace Ped{
 
 	  // Sets everything up
 	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
-		
-	  void *preComputeFunc(thread_info ti);
+	        
 	  // Coordinates a time step in the scenario: move all agents by one step (if applicable).
 	  void tick();
 
@@ -61,6 +60,7 @@ namespace Ped{
 		// should be used for calculating the desired positions of
 		// agents (Assignment 1)
 		IMPLEMENTATION implementation;
+		int tick_nr;
 
 		// The agents in this scenario
 		std::vector<Tagent*> agents;
