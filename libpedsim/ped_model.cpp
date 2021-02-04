@@ -30,9 +30,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 
 	// Sets the chosen implemenation. Standard in the given code is SEQ
 	this->implementation = implementation;
-
-	//
-	this->tick_nr = 0;
 	
 	// Set up heatmap (relevant for Assignment 4)
 	setupHeatmapSeq();
