@@ -27,12 +27,14 @@ namespace Ped{
 	class Model
 	{
 	public:
+	  /*
 	  struct thread_info
 	  {                     // Used as argument to thread_start()
 	    std::vector<Tagent*> agents; // the array of agents in the simulation
 	    int thread_num;     // Application-defined thread # 
 	    int num_threads; // From command-line argument 
 	  };
+	  */
 
 	  // Sets everything up
 	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
@@ -60,7 +62,6 @@ namespace Ped{
 		// should be used for calculating the desired positions of
 		// agents (Assignment 1)
 		IMPLEMENTATION implementation;
-		int tick_nr;
 
 		// The agents in this scenario
 		std::vector<Tagent*> agents;

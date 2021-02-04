@@ -51,6 +51,8 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 }
 
 
+// THIS BELONGS TO THE FAILED PTHREAD ATTEMPT
+/*
 void preComputeFunc(Ped::Model::thread_info ti)
 {
   int slice = ti.agents.size() / ti.num_threads;
@@ -73,11 +75,11 @@ void *thread_startup(void *thread_inf)
   Ped::Model::thread_info ti = *static_cast<Ped::Model::thread_info*>(thread_inf);
   preComputeFunc(ti);
 }
+*/
 
 
 void Ped::Model::tick()
 {
-  this->tick_nr = this->tick_nr + 1;
   // assuming threads between 2-8
   int num_threads = 8; //change this variable to chose number of threads we run on
 
@@ -102,6 +104,8 @@ void Ped::Model::tick()
     }
   case PTHREAD:
     { 
+      // THIS IS THE FAILED PTHREAD VERSION
+      /*
       Ped::Model::thread_info ti;
       pthread_t threads[num_threads];
       for (int i = 0; i < num_threads; i++)
@@ -120,7 +124,35 @@ void Ped::Model::tick()
 	  //std::cout << "\nthread nr: " << i << " success?: " << x;
 	}
       
-      std::cout << "\ntick_nr: " << this->tick_nr;
+      */
+
+      int num_agents = agents.size();
+      int one_slice = num_agents/num_threads;
+      
+      /* Comment out the threads you're not using and add "num_agents" as the third argument
+       to the last thread you're using and make sure that the threads before that have 
+       one_slice*(thread_number-1) and one_slice*(thread_number) as their second and third arguments
+      */
+      std::thread first(computeAgentPositions, 0, one_slice, agents);
+      std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
+      std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
+      std::thread fourth(computeAgentPositions, one_slice*3, one_slice*4, agents);
+      std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
+      std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
+      std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
+      std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
+      first.join();
+      second.join();
+      third.join();
+      fourth.join();
+      fifth.join();
+      sixth.join();
+      seventh.join();
+      eigth.join();
+      if (num_threads > 8)
+	{
+	  std::cout<<"TOO MANY THREADS!!";
+	}
       break;
     }
   case CUDA:
