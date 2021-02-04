@@ -28,7 +28,8 @@ namespace Ped{
 	{
 	public:
 	  struct thread_info
-	  {                     // Used as argument to thread_start() 
+	  {                     // Used as argument to thread_start()
+	    std::vector<Tagent*> agents; // the array of agents in the simulation
 	    int thread_num;     // Application-defined thread # 
 	    int num_threads; // From command-line argument 
 	  };

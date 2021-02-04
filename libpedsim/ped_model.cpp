@@ -41,26 +41,25 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 {
   for (start; start < end; start++) 
       {
-
 	agents[start]->computeNextDesiredPosition();
 	agents[start]->setX(agents[start]->getDesiredX());
 	agents[start]->setY(agents[start]->getDesiredY());
-    
       }
 }
 
 
 void *Ped::Model::preComputeFunc(Ped::Model::thread_info ti)
 {
-    std::vector<Tagent*> agents = getAgents();
-    int num_agents = agents.size();
-    int num_threads = ti.num_threads;
-    int thread_id = ti.thread_num;
-    int slice = num_agents/num_threads;
-    std::cout << "\nnum_agents: " << num_agents;
-    std::cout << "\nthread id: " << thread_id;
-    std::cout << "\nslice: " << slice;
-    computeAgentPositions(slice * thread_id, slice * (thread_id + 1), agents);
+    int slice = ti.agents.size() / ti.num_threads;
+    if (ti.num_threads == ti.thread_num + 1)
+    {
+      computeAgentPositions(slice * ti.thread_num, ti.agents.size(), ti.agents); 
+    }
+    else
+    {
+      computeAgentPositions(slice * ti.thread_num, slice * (ti.thread_num + 1), ti.agents);
+    }
+
     return NULL;
 }
 
@@ -77,10 +76,9 @@ void *thread_startup(void *thread_inf)
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 8; //change this variable to chose number of threads we run on
+  int num_threads = 2; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
-  std::cout << "\nnum_agents in tick: " << agents.size();
   switch(this->implementation){
   case SEQ:
     {
@@ -105,6 +103,8 @@ void Ped::Model::tick()
       pthread_t threads[num_threads];
       for (int i = 0; i < num_threads; i++)
 	{
+	  //std::cout << "\nloop: " << i;
+	  ti.agents = agents;
 	  ti.num_threads = num_threads;
 	  ti.thread_num = i;
 	  pthread_create(&threads[i], NULL, thread_startup, &ti);
