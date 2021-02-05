@@ -48,33 +48,6 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 }
 
 
-// THIS BELONGS TO THE FAILED PTHREAD ATTEMPT
-/*
-void preComputeFunc(Ped::Model::thread_info ti)
-{
-  int slice = ti.agents.size() / ti.num_threads;
-  if (ti.num_threads == ti.thread_num + 1)
-    {
-      computeAgentPositions(slice * ti.thread_num, ti.agents.size(), ti.agents); 
-      std::cout << "\n" << ti.thread_num;
-    }
-  else
-    {
-      computeAgentPositions(slice * ti.thread_num, slice * (ti.thread_num + 1), ti.agents);
-      std::cout << "\n" << ti.thread_num;
-    }
-  pthread_exit(NULL);
-}
-
-
-void *thread_startup(void *thread_inf)
-{
-  Ped::Model::thread_info ti = *static_cast<Ped::Model::thread_info*>(thread_inf);
-  preComputeFunc(ti);
-}
-*/
-
-
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
@@ -101,35 +74,12 @@ void Ped::Model::tick()
     }
   case PTHREAD:
     { 
-      // THIS IS THE FAILED PTHREAD VERSION
-      /*
-      Ped::Model::thread_info ti;
-      pthread_t threads[num_threads];
-      for (int i = 0; i < num_threads; i++)
-	{
-	  //printf("%d", i);
-	  //std::cout << "\nloop: ";
-	  ti.agents = agents;
-	  ti.num_threads = num_threads;
-	  ti.thread_num = i;
-	  int y = pthread_create(&threads[i], NULL, &thread_startup, &ti);
-	}
-
-      for (int i = 0; i < num_threads; i++)
-	{
-	  int x = pthread_join(threads[i], NULL);
-	  //std::cout << "\nthread nr: " << i << " success?: " << x;
-	}
-      
-      */
-
       int num_agents = agents.size();
       int one_slice = num_agents/num_threads;
       
       /* Comment out the threads you're not using and add "num_agents" as the third argument
        to the last thread you're using and make sure that the threads before that have 
-       one_slice*(thread_number-1) and one_slice*(thread_number) as their second and third arguments
-      */
+       one_slice*(thread_number-1) and one_slice*(thread_number) as their second and third arguments */
       std::thread first(computeAgentPositions, 0, one_slice, agents);
       std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
       std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
