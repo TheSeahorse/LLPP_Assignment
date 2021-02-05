@@ -63,7 +63,7 @@ void Ped::Model::tick()
   case OMP:
     {
       omp_set_num_threads(num_threads);
-      #pragma omp parallel for
+#pragma omp parallel for schedule(static)
       for (int i = 0; i < agents.size(); i++) 
 	{
 	  agents[i]->computeNextDesiredPosition();
