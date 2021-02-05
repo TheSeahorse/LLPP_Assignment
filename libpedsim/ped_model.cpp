@@ -51,7 +51,7 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 8; //change this variable to chose number of threads we run on
+  int num_threads = 4; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
   switch(this->implementation){
@@ -63,7 +63,7 @@ void Ped::Model::tick()
   case OMP:
     {
       omp_set_num_threads(num_threads);
-#pragma omp parallel for
+      #pragma omp parallel for
       for (int i = 0; i < agents.size(); i++) 
 	{
 	  agents[i]->computeNextDesiredPosition();
@@ -79,27 +79,28 @@ void Ped::Model::tick()
       
       /* Comment out the threads you're not using and add "num_agents" as the third argument
        to the last thread you're using and make sure that the threads before that have 
-       one_slice*(thread_number-1) and one_slice*(thread_number) as their second and third arguments */
+       one_slice*(thread_number-1) and one_slice*(thread_number) 
+       as their second and third arguments */
       std::thread first(computeAgentPositions, 0, one_slice, agents);
       std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
       std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
-      std::thread fourth(computeAgentPositions, one_slice*3, one_slice*4, agents);
+      std::thread fourth(computeAgentPositions, one_slice*3, num_agents, agents);
+      /*
       std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
       std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
       std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
       std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
+      */
       first.join();
       second.join();
       third.join();
       fourth.join();
+      /*
       fifth.join();
       sixth.join();
       seventh.join();
       eigth.join();
-      if (num_threads > 8)
-	{
-	  std::cout<<"TOO MANY THREADS!!";
-	}
+      */
       break;
     }
   case CUDA:

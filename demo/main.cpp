@@ -63,12 +63,14 @@ int main(int argc, char*argv[]) {
 	}
 
 	int retval = 0;
+
+	// code for choosing implementaion when sim starts. 
 	char choice_num;
 	Ped::IMPLEMENTATION choice;
-	std::cout<<"Enter the choice: CUDA = 0, VECTOR = 1, OMP = 2, PTHREAD = 3, SEQ = 4\n";
+	std::cout<<"Choose implementation: CUDA = 0, VECTOR = 1, OMP = 2, PTHREAD = 3, SEQ = 4\n";
 	std::cin>>choice_num;
 	
-	if(choice_num == '0')
+	if (choice_num == '0')
 	  {
 	    choice = Ped::CUDA;
 	  }
