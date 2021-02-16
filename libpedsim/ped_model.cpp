@@ -14,25 +14,33 @@
 #include "cuda_testkernel.h"
 #include <omp.h>
 #include <thread>
+#include <emmintrin.h>
 
 #include <stdlib.h>
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation)
 {
-	// Convenience test: does CUDA work on this machine?
-	cuda_test();
+  __m128 A, B, C;
+  // Convenience test: does CUDA work on this machine?
+  cuda_test();
 
-	// Set 
-	agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
+  
+  // Set up agents
+  agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
 
-	// Set up destinations
-	destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
+  for (int i = 0; i < agents.size(); i += 4)
+    {
+      std::cout<<i;
+    }
 
-	// Sets the chosen implemenation. Standard in the given code is SEQ
-	this->implementation = implementation;
+  // Set up destinations
+  destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
+
+  // Sets the chosen implemenation. Standard in the given code is SEQ
+  this->implementation = implementation;
 	
-	// Set up heatmap (relevant for Assignment 4)
-	setupHeatmapSeq();
+  // Set up heatmap (relevant for Assignment 4)
+  setupHeatmapSeq();
 }
 
 
