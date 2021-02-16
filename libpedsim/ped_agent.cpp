@@ -33,7 +33,7 @@ void Ped::Tagent::computeNextDesiredPosition() {
 		// compute where to move to
 		return;
 	}
-
+        
 	double diffX = destination->getx() - x;
 	double diffY = destination->gety() - y;
 	double len = sqrt(diffX * diffX + diffY * diffY);

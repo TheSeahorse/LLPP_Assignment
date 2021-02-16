@@ -20,7 +20,6 @@
 
 void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario, IMPLEMENTATION implementation)
 {
-  __m128 A, B, C;
   // Convenience test: does CUDA work on this machine?
   cuda_test();
 
@@ -28,11 +27,19 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   // Set up agents
   agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
 
-  for (int i = 0; i < agents.size(); i += 4)
+  float agentX[agents.size()];
+  float agentY[agents.size()];
+  float destX[agents.size()];
+  float destY[agents.size()];
+  
+  for (int i = 0; i < agents.size(); i++)
     {
-      std::cout<<i;
+      agentX[i] = agents[i]->getX();
+      agentY[i] = agents[i]->getY();
+      destX[i] = agents[i]->getDesiredX();
+      destY[i] = agents[i]->getDesiredY();
     }
-
+  
   // Set up destinations
   destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
 
@@ -117,6 +124,25 @@ void Ped::Model::tick()
     }
   case VECTOR:
     {
+      for (int i = 0; i < agents.size(); i += 4) 
+	{
+	  
+	  diffX = _mm_sub_ps(destX, x);
+	  diffY = _mm_sub_ps(destY, y);
+	  sqrDiffX = _mm_mul_ps(diffX,diffX);
+	  sqrDiffY = _mm_mul_ps(diffY,diffY);
+	  sumSqrDiff = _mm_add_ps(sqrDiffX, sqrDiffY);
+	  len = _mm_sqrt_ps(sumSqrDiff);
+	  desiredPositionX_pre = _mm_div_ps(diffX, len);
+	  desiredPositionY_pre = _mm_div_ps(diffY, len);
+	  desiredPositionX = _mm_add_ps(x, desiredPositionX_pre);
+	  desiredPositionY = _mm_add_ps(y, desiredPositionY_pre);
+
+	  agents[i]->computeNextDesiredPosition();
+	  agents[i]->setX(agents[i]->getDesiredX());
+	  agents[i]->setY(agents[i]->getDesiredY());
+	}
+      
       break;
     }
   }

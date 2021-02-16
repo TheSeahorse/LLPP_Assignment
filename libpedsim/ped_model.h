@@ -27,6 +27,7 @@ namespace Ped{
 	class Model
 	{
 	public:
+	  __m128 diffX, diffY, sqrDiffX, sqrDiffY, sumSqrDiff, len, preDesPosX, preDesPosY, desPosX, desPosY;
 	  // Sets everything up
 	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
 	        
