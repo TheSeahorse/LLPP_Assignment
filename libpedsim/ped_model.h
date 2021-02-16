@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 #include <set>
-
+#include <emmintrin.h>
 #include "ped_agent.h"
 
 namespace Ped{
@@ -27,7 +27,7 @@ namespace Ped{
 	class Model
 	{
 	public:
-	  __m128 diffX, diffY, sqrDiffX, sqrDiffY, sumSqrDiff, len, preDesPosX, preDesPosY, desPosX, desPosY;
+	  __m128 x, y, diffX, diffY, sqrDiffX, sqrDiffY, sumSqrDiff, len, preDesPosX, preDesPosY, desPosX, desPosY;
 	  // Sets everything up
 	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
 	        
@@ -36,10 +36,20 @@ namespace Ped{
 
 	  // Returns the agents of this scenario
 	  const std::vector<Tagent*> getAgents() const { return agents; };
-
+	  
+	  std::vector<float> agentX;
+	  std::vector<float> agentY;
+	  std::vector<float> destX;
+	  std::vector<float> destY;
+	  
+	  //const std::vector<float> getAgentX() const {return agentX;};
+	  //const std::vector<float> getAgentY() const {return agentY;};
+	  //const std::vector<float> getDestX() const {return destX;};
+	  //const std::vector<float> getDestY() const {return destY;};
 	  // Adds an agent to the tree structure
 	  void placeAgent(const Ped::Tagent *a);
-
+	  
+	  
 	  // Cleans up the tree and restructures it. Worth calling every now and then.
 	  void cleanup();
 	  ~Model();
@@ -63,7 +73,8 @@ namespace Ped{
 
 		// Moves an agent towards its next position
 		void move(Ped::Tagent *agent);
-
+		
+		
 		////////////
 		/// Everything below here won't be relevant until Assignment 3
 		///////////////////////////////////////////////

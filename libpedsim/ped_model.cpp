@@ -14,7 +14,7 @@
 #include "cuda_testkernel.h"
 #include <omp.h>
 #include <thread>
-#include <emmintrin.h>
+
 
 #include <stdlib.h>
 
@@ -26,22 +26,25 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   
   // Set up agents
   agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
-
-  float agentX[agents.size()];
-  float agentY[agents.size()];
-  float destX[agents.size()];
-  float destY[agents.size()];
-  
-  for (int i = 0; i < agents.size(); i++)
-    {
-      agentX[i] = agents[i]->getX();
-      agentY[i] = agents[i]->getY();
-      destX[i] = agents[i]->getDesiredX();
-      destY[i] = agents[i]->getDesiredY();
-    }
   
   // Set up destinations
   destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
+  int nr_agents = agents.size();
+  this->agentX = (float *)_mm_malloc(agents.size() * sizeof(float), 16);
+    // this->agentX.resize(nr_agents); 
+  this->agentY.resize(nr_agents);
+  this->destX.resize(nr_agents);
+  this->destY.resize(nr_agents);
+  
+  for (int i = 0; i < agents.size(); i++)
+    {
+      this->agentX[i] = agents[i]->getX();
+      this->agentY[i] = agents[i]->getY();
+      this->destX[i] = agents[i]->getNextDestination()->getx();
+      this->destY[i] = agents[i]->getNextDestination()->gety();
+      printf("i = %d\n", i);
+    }
+  printf("Outside\n");
 
   // Sets the chosen implemenation. Standard in the given code is SEQ
   this->implementation = implementation;
@@ -69,6 +72,10 @@ void Ped::Model::tick()
   int num_threads = 4; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
+  // std::vector<float> agentX = getAgentX();
+  // std::vector<float> agentY = getAgentY();
+  // std::vector<float> destX = getDestX();
+  //  std::vector<float> destY = getDestY();
   switch(this->implementation){
   case SEQ:
     {
@@ -126,21 +133,30 @@ void Ped::Model::tick()
     {
       for (int i = 0; i < agents.size(); i += 4) 
 	{
-	  
-	  diffX = _mm_sub_ps(destX, x);
-	  diffY = _mm_sub_ps(destY, y);
-	  sqrDiffX = _mm_mul_ps(diffX,diffX);
-	  sqrDiffY = _mm_mul_ps(diffY,diffY);
-	  sumSqrDiff = _mm_add_ps(sqrDiffX, sqrDiffY);
-	  len = _mm_sqrt_ps(sumSqrDiff);
-	  desiredPositionX_pre = _mm_div_ps(diffX, len);
-	  desiredPositionY_pre = _mm_div_ps(diffY, len);
-	  desiredPositionX = _mm_add_ps(x, desiredPositionX_pre);
-	  desiredPositionY = _mm_add_ps(y, desiredPositionY_pre);
-
-	  agents[i]->computeNextDesiredPosition();
-	  agents[i]->setX(agents[i]->getDesiredX());
-	  agents[i]->setY(agents[i]->getDesiredY());
+	  std::cout << "Hello1";
+	  this->x = _mm_load_ps(&this->agentX[i]);
+	  std::cout << "Hellow";
+	  this->y = _mm_load_ps(&this->agentY[i]);
+	  this->diffX = _mm_load_ps(&this->destX[i]);
+	  this->diffY = _mm_load_ps(&this->destY[i]);
+	  std::cout << "Hello";
+	  /*
+	  this->diffX = _mm_sub_ps(diffX, x);
+	  this->diffY = _mm_sub_ps(diffY, y);
+	  this->sqrDiffX = _mm_mul_ps(diffX,diffX);
+	  this->sqrDiffY = _mm_mul_ps(diffY,diffY);
+	  this->sumSqrDiff = _mm_add_ps(sqrDiffX, sqrDiffY);
+	  this->len = _mm_sqrt_ps(sumSqrDiff);
+	  this->desiredPositionX_pre = _mm_div_ps(diffX, len);
+	  this->desiredPositionY_pre = _mm_div_ps(diffY, len);
+	  this->desiredPositionX = _mm_add_ps(x, desiredPositionX_pre);
+	  this->desiredPositionY = _mm_add_ps(y, desiredPositionY_pre);
+	  _mm_store_ps(agentX[i], desiredPositionX);
+	  _mm_store_ps(agentY[i], desiredPositionY);
+	  */
+	  //agents[i]->computeNextDesiredPosition();
+	  //agents[i]->setX(agents[i]->getDesiredX());
+	  //agents[i]->setY(agents[i]->getDesiredY());
 	}
       
       break;
