@@ -45,6 +45,13 @@ void Ped::Tagent::addWaypoint(Twaypoint* wp) {
 	waypoints.push_back(wp);
 }
 
+Ped::Twaypoint* Ped::Tagent::updateDestination() {
+  waypoints.push_back(destination);
+  Ped::Twaypoint* nextDestination = waypoints.front();
+  waypoints.pop_front();
+  return nextDestination;
+}
+
 Ped::Twaypoint* Ped::Tagent::getNextDestination() {
 	Ped::Twaypoint* nextDestination = NULL;
 	bool agentReachedDestination = false;

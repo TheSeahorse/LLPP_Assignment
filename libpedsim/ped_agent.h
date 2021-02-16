@@ -47,6 +47,7 @@ namespace Ped {
 
     // Adds a new waypoint to reach for this agent
     void addWaypoint(Twaypoint* wp);
+    Twaypoint* updateDestination();
     Twaypoint* getNextDestination();
 
   private:
@@ -73,7 +74,6 @@ namespace Ped {
     void init(int posX, int posY);
 
     // Returns the next destination to visit
-    //Twaypoint* getNextDestination();
   };
 }
 

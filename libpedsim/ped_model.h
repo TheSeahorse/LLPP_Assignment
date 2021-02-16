@@ -27,7 +27,7 @@ namespace Ped{
 	class Model
 	{
 	public:
-	  __m128 x, y, diffX, diffY, sqrDiffX, sqrDiffY, sumSqrDiff, len, preDesPosX, preDesPosY, desPosX, desPosY;
+	  __m128 x, y, r, diffX, diffY, sqrX, sqrY, sumSqr, len, desPosX, desPosY, newDestBool;
 	  // Sets everything up
 	  void setup(std::vector<Tagent*> agentsInScenario, std::vector<Twaypoint*> destinationsInScenario,IMPLEMENTATION implementation);
 	        
@@ -41,6 +41,7 @@ namespace Ped{
 	  std::vector<float> agentY;
 	  std::vector<float> destX;
 	  std::vector<float> destY;
+	  std::vector<float> destR;
 	  
 	  //const std::vector<float> getAgentX() const {return agentX;};
 	  //const std::vector<float> getAgentY() const {return agentY;};

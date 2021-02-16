@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 
-int main(int argc, char*argv[]) {
+int main(int argc, char*argv[]) { 
   bool timing_mode = 0;
   int i = 1;
   QString scenefile = "scenario.xml";
@@ -105,10 +105,13 @@ int main(int argc, char*argv[]) {
     ParseScenario parser(scenefile);
 		
     model.setup(parser.getAgents(), parser.getWaypoints(), choice);
+    std::cout << "Outside in main\n";
 
     // GUI related set ups
     QApplication app(argc, argv);
+    std::cout << "Before mainwindow\n";
     MainWindow mainwindow(model);
+    std::cout << "After mainwindow\n";
 
     // Default number of steps to simulate. Feel free to change this.
     const int maxNumberOfStepsToSimulate = 100000;
@@ -161,7 +164,7 @@ int main(int argc, char*argv[]) {
     // Graphics version
     else
       {
-
+	std::cout << "Before simulation\n";
 	PedSimulation simulation(model, mainwindow);
 
 	cout << "Demo setup complete, running ..." << endl;
