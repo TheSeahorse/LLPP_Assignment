@@ -58,7 +58,6 @@ Ped::Twaypoint* Ped::Tagent::getNextDestination() {
   bool agentReachedDestination = false;
 
   if (destination != NULL) {
-    std::cout << "shoudln't be here\n";
     // compute if agent reached its current destination
     double diffX = destination->getx() - x;
     double diffY = destination->gety() - y;

@@ -35,16 +35,17 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   this->agentY.resize(nr_agents);
   this->destX.resize(nr_agents);
   this->destY.resize(nr_agents);
-  this->destR.resize(nr_agents);
+  //this->destR.resize(nr_agents);
   
   for (int i = 0; i < agents.size(); i++)
     {
-      Ped::Twaypoint* destination = agents[i]->getNextDestination();
+      //Ped::Twaypoint* destination = agents[i]->getNextDestination();
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
-      this->destX[i] = destination->getx();
-      this->destY[i] = destination->gety();
-      this->destR[i] = destination->getr();
+      this->destX[i] = agents[i]->getDesiredX();
+      this->destY[i] = agents[i]->getDesiredY();
+      //this->destR[i] = agents[i]->getr();
+      
       printf("i = %d\n", i);
     }
   printf("Outside\n");
@@ -132,48 +133,41 @@ void Ped::Model::tick()
     {
       for (int i = 0; i < agents.size(); i += 4) 
 	{
+	  // getDesired är inte det vi letar efter, gör bara så att agenterna rör sig åt samma
+	  // håll i oändlighet
 	  std::cout << "inside len thingy at: 0 \n";
-	  Ped::Twaypoint* newDest = agents[i]->getNextDestination();
-	  std::cout << "after newDest" << newDest << "\n";
-	  this->destX[i] = newDest->getx();
-	  this->destY[i] = newDest->gety();
-	  this->destR[i] = newDest->getr();
+	  agents[i]->getNextDestination();
+	  this->destX[i] = agents[i]->getDesiredX();
+	  this->destY[i] = agents[i]->getDesiredY();
 	  std::cout << "after assign\n";
 	  
 	  if (i+1 < agents.size())
 	    {
-	      //std::cout << "inside len thingy at: 1 \n";
-	      Ped::Twaypoint* newDest = agents[i+1]->getNextDestination();
-	      //std::cout << "after newDest" << newDest << "\n";
-	      this->destX[i+1] = newDest->getx();
-	      this->destY[i+1] = newDest->gety();
-	      this->destR[i+1] = newDest->getr();
-	      //std::cout << "after assign\n";
+	      std::cout << "inside len thingy at: 1 \n";
+	      agents[i+1]->getNextDestination();
+	      this->destX[i+1] = agents[i+1]->getDesiredX();
+	      this->destY[i+1] = agents[i+1]->getDesiredY();
+	      std::cout << "after assign\n";
 	    }
 	  if (i+2< agents.size())
 	    {
-	      //std::cout << "inside len thingy at: 2 \n";
-	      Ped::Twaypoint* newDest = agents[i+2]->getNextDestination();
-	      //std::cout << "after newDest" << newDest << "\n";
-	      this->destX[i+2] = newDest->getx();
-	      this->destY[i+2] = newDest->gety();
-	      this->destR[i+2] = newDest->getr();
-	      //std::cout << "after assign\n";
+	      std::cout << "inside len thingy at: 2 \n";
+	      agents[i+2]->getNextDestination();
+	      this->destX[i+2] = agents[i+2]->getDesiredX();
+	      this->destY[i+2] = agents[i+2]->getDesiredY();
+	      std::cout << "after assign\n";
 	    }
 	  if (i+3 < agents.size())
 	    {
-	      //std::cout << "inside len thingy at: 3 \n";
-	      Ped::Twaypoint* newDest = agents[i+3]->getNextDestination();
-	      //std::cout << "after newDest " << newDest << "\n";
-	      this->destX[i+3] = newDest->getx();
-	      this->destY[i+3] = newDest->gety();
-	      this->destR[i+3] = newDest->getr();
-	      //std::cout << "after assign\n";
+	      std::cout << "inside len thingy at: 3 \n";
+	      agents[i+3]->getNextDestination();
+	      this->destX[i+3] = agents[i+3]->getDesiredX();
+	      this->destY[i+3] = agents[i+3]->getDesiredY();
+	      std::cout << "after assign\n";
 	    } 
 
 	  this->x = _mm_load_ps(&this->agentX[i]);
 	  this->y = _mm_load_ps(&this->agentY[i]);
-	  this->r = _mm_load_ps(&this->destR[i]);
 	  this->diffX = _mm_load_ps(&this->destX[i]);
 	  this->diffY = _mm_load_ps(&this->destY[i]);
 	  
