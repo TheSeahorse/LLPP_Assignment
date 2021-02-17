@@ -99,18 +99,18 @@ void Ped::Model::tick()
       int one_slice = num_agents/num_threads;
       
       /* Comment out the threads you're not using and add "num_agents" as the third argument
-       to the last thread you're using and make sure that the threads before that have 
-       one_slice*(thread_number-1) and one_slice*(thread_number) 
-       as their second and third arguments */
+	 to the last thread you're using and make sure that the threads before that have 
+	 one_slice*(thread_number-1) and one_slice*(thread_number) 
+	 as their second and third arguments */
       std::thread first(computeAgentPositions, 0, one_slice, agents);
       std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
       std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
       std::thread fourth(computeAgentPositions, one_slice*3, num_agents, agents);
       /*
-      std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
-      std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
-      std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
-      std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
+	std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
+	std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
+	std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
+	std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
       */
       first.join();
       second.join();
@@ -132,6 +132,45 @@ void Ped::Model::tick()
     {
       for (int i = 0; i < agents.size(); i += 4) 
 	{
+	  std::cout << "inside len thingy at: 0 \n";
+	  Ped::Twaypoint* newDest = agents[i]->getNextDestination();
+	  std::cout << "after newDest" << newDest << "\n";
+	  this->destX[i] = newDest->getx();
+	  this->destY[i] = newDest->gety();
+	  this->destR[i] = newDest->getr();
+	  std::cout << "after assign\n";
+	  
+	  if (i+1 < agents.size())
+	    {
+	      //std::cout << "inside len thingy at: 1 \n";
+	      Ped::Twaypoint* newDest = agents[i+1]->getNextDestination();
+	      //std::cout << "after newDest" << newDest << "\n";
+	      this->destX[i+1] = newDest->getx();
+	      this->destY[i+1] = newDest->gety();
+	      this->destR[i+1] = newDest->getr();
+	      //std::cout << "after assign\n";
+	    }
+	  if (i+2< agents.size())
+	    {
+	      //std::cout << "inside len thingy at: 2 \n";
+	      Ped::Twaypoint* newDest = agents[i+2]->getNextDestination();
+	      //std::cout << "after newDest" << newDest << "\n";
+	      this->destX[i+2] = newDest->getx();
+	      this->destY[i+2] = newDest->gety();
+	      this->destR[i+2] = newDest->getr();
+	      //std::cout << "after assign\n";
+	    }
+	  if (i+3 < agents.size())
+	    {
+	      //std::cout << "inside len thingy at: 3 \n";
+	      Ped::Twaypoint* newDest = agents[i+3]->getNextDestination();
+	      //std::cout << "after newDest " << newDest << "\n";
+	      this->destX[i+3] = newDest->getx();
+	      this->destY[i+3] = newDest->gety();
+	      this->destR[i+3] = newDest->getr();
+	      //std::cout << "after assign\n";
+	    } 
+
 	  this->x = _mm_load_ps(&this->agentX[i]);
 	  this->y = _mm_load_ps(&this->agentY[i]);
 	  this->r = _mm_load_ps(&this->destR[i]);
@@ -153,82 +192,29 @@ void Ped::Model::tick()
 	  this->desPosX = _mm_add_ps(this->x, this->desPosX);
 	  this->desPosY = _mm_add_ps(this->y, this->desPosY);
 
-	  std::vector<float> ifNewDest;
-	  ifNewDest.resize(4);
-	  
-	  this->newDestBool = _mm_cmplt_ps(this->len, this->r);
 
 	  _mm_store_ps(&this->agentX[i], this->desPosX);
 	  _mm_store_ps(&this->agentY[i], this->desPosY);
-	  _mm_store_ps(&ifNewDest[0], this->newDestBool);
 	  
-
 	  agents[i]->setX((int)round(this->agentX[i]));
 	  agents[i]->setY((int)round(this->agentY[i]));
-
-	  if (ifNewDest[0])
-	    {
-	      std::cout << "inside len thingy at: 0 \n";
-	      Ped::Twaypoint* newDest = agents[i]->updateDestination();
-	      std::cout << "after newDest" << newDest << "\n";
-	      this->destX[i] = newDest->getx();
-	      this->destY[i] = newDest->gety();
-	      this->destR[i] = newDest->getr();
-	      std::cout << "after assign\n";
-	    }
+	  
 	  if (i+1 < agents.size())
 	    {
 	      agents[i+1]->setX((int)round(this->agentX[i+1]));
 	      agents[i+1]->setY((int)round(this->agentY[i+1]));
-
-	      if (ifNewDest[1])
-		{
-		  std::cout << "inside len thingy at: 1 \n";
-		  Ped::Twaypoint* newDest = agents[i+1]->updateDestination();
-		  std::cout << "after newDest" << newDest << "\n";
-		  this->destX[i+1] = newDest->getx();
-		  this->destY[i+1] = newDest->gety();
-		  this->destR[i+1] = newDest->getr();
-		  std::cout << "after assign\n";
-		}
 	    }
 	  if (i+2 < agents.size())
 	    {
 	      agents[i+2]->setX((int)round(this->agentX[i+2]));
 	      agents[i+2]->setY((int)round(this->agentY[i+2]));
-
-	      if (ifNewDest[2])
-		{
-		  std::cout << "inside len thingy at: 2 \n";
-		  Ped::Twaypoint* newDest = agents[i+2]->updateDestination();
-		  std::cout << "after newDest" << newDest << "\n";
-		  this->destX[i+2] = newDest->getx();
-		  this->destY[i+2] = newDest->gety();
-		  this->destR[i+2] = newDest->getr();
-		  std::cout << "after assign\n";
-		}
 	    }
 	  if (i+3 < agents.size())
 	    {
 	      agents[i+3]->setX((int)round(this->agentX[i+3]));
 	      agents[i+3]->setY((int)round(this->agentY[i+3]));
-
-	      if (ifNewDest[3])
-		{
-		  std::cout << "inside len thingy at: 3 \n";
-		  Ped::Twaypoint* newDest = agents[i+3]->updateDestination();
-		  std::cout << "after newDest " << newDest << "\n";
-		  this->destX[i+3] = newDest->getx();
-		  this->destY[i+3] = newDest->gety();
-		  this->destR[i+3] = newDest->getr();
-		  std::cout << "after assign\n";
-		}
 	    }
-	  //agents[i]->computeNextDesiredPosition();
-	  //agents[i]->setX(agents[i]->getDesiredX());
-	  //agents[i]->setY(agents[i]->getDesiredY());
 	}
-      
       break;
     }
   }
