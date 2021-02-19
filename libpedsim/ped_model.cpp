@@ -35,16 +35,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   this->agentY.resize(nr_agents);
   this->destX.resize(nr_agents);
   this->destY.resize(nr_agents);
-  //this->destR.resize(nr_agents);
+  this->destR.resize(nr_agents);
   
   for (int i = 0; i < agents.size(); i++)
     {
-      //Ped::Twaypoint* destination = agents[i]->getNextDestination();
+      agents[i]->updateDestination();
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
-      this->destX[i] = agents[i]->getDesiredX();
-      this->destY[i] = agents[i]->getDesiredY();
-      //this->destR[i] = agents[i]->getr();
+      this->destX[i] = agents[i]->destination->getx();
+      this->destY[i] = agents[i]->destination->gety();
+      this->destR[i] = agents[i]->destination->getr();
       
       printf("i = %d\n", i);
     }
@@ -137,32 +137,32 @@ void Ped::Model::tick()
 	  // håll i oändlighet
 	  std::cout << "inside len thingy at: 0 \n";
 	  agents[i]->getNextDestination();
-	  this->destX[i] = agents[i]->getDesiredX();
-	  this->destY[i] = agents[i]->getDesiredY();
+	  this->destX[i] = agents[i]->destination->getx();
+	  this->destY[i] = agents[i]->destination->gety();
 	  std::cout << "after assign\n";
 	  
 	  if (i+1 < agents.size())
 	    {
 	      std::cout << "inside len thingy at: 1 \n";
 	      agents[i+1]->getNextDestination();
-	      this->destX[i+1] = agents[i+1]->getDesiredX();
-	      this->destY[i+1] = agents[i+1]->getDesiredY();
+	      this->destX[i+1] = agents[i+1]->destination->getx();
+	      this->destY[i+1] = agents[i+1]->destination->gety();
 	      std::cout << "after assign\n";
 	    }
 	  if (i+2< agents.size())
 	    {
 	      std::cout << "inside len thingy at: 2 \n";
 	      agents[i+2]->getNextDestination();
-	      this->destX[i+2] = agents[i+2]->getDesiredX();
-	      this->destY[i+2] = agents[i+2]->getDesiredY();
+	      this->destX[i+2] = agents[i+2]->destination->getx();
+	      this->destY[i+2] = agents[i+2]->destination->gety();
 	      std::cout << "after assign\n";
 	    }
 	  if (i+3 < agents.size())
 	    {
 	      std::cout << "inside len thingy at: 3 \n";
 	      agents[i+3]->getNextDestination();
-	      this->destX[i+3] = agents[i+3]->getDesiredX();
-	      this->destY[i+3] = agents[i+3]->getDesiredY();
+	      this->destX[i+3] = agents[i+3]->destination->getx();
+	      this->destY[i+3] = agents[i+3]->destination->gety();
 	      std::cout << "after assign\n";
 	    } 
 
