@@ -31,12 +31,15 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   
   // Set up destinations
   destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
-  int nr_agents = agents.size();
-  this->agentX.resize(nr_agents); 
-  this->agentY.resize(nr_agents);
-  this->destX.resize(nr_agents);
-  this->destY.resize(nr_agents);
-  this->destR.resize(nr_agents);
+  int vector_size = agents.size();
+  int rest = vector_size % 4;
+  vector_size = vector_size + rest;
+
+  this->agentX.resize(vector_size); 
+  this->agentY.resize(vector_size);
+  this->destX.resize(vector_size);
+  this->destY.resize(vector_size);
+  this->destR.resize(vector_size);
 
   for (int i = 0; i < agents.size(); i++)
     {
@@ -77,7 +80,6 @@ void Ped::Model::tick()
   switch(this->implementation){
   case SEQ:
     {
-		printf("Running SEQ\n");
       computeAgentPositions(0, agents.size(), agents);
       break;
     }
@@ -117,10 +119,10 @@ void Ped::Model::tick()
       third.join();
       fourth.join();
       /*
-      fifth.join();
-      sixth.join();
-      seventh.join();
-      eigth.join();
+	fifth.join();
+	sixth.join();
+	seventh.join();
+	eigth.join();
       */
       break;
     }
@@ -130,46 +132,53 @@ void Ped::Model::tick()
     }
   case VECTOR:
     {
-		for (int i = 0; i < agents.size(); i++)
-		{
-			agents[i]->setX((int)round(this->agentX[i]));
-		  	agents[i]->setY((int)round(this->agentY[i]));
+      omp_set_num_threads(num_threads);
+#pragma omp parallel for
+      for (int i = 0; i < agents.size(); i++)
+	{
+	  agents[i]->setX((int)round(this->agentX[i]));
+	  agents[i]->setY((int)round(this->agentY[i]));
 
-			Twaypoint *newDest = agents[i]->getNextDestination();
-			this->destX[i] = newDest->getx();
-			this->destY[i] = newDest->gety();
-		}
-	
-    	for (int i = 0; i < agents.size(); i += 4) 
-		{
-			this->x = _mm_load_ps((float *)&this->agentX[i]);
-	  		this->y = _mm_load_ps((float *)&this->agentY[i]);
-	  		this->diffX = _mm_load_ps((float *)&this->destX[i]);
-	  		this->diffY = _mm_load_ps((float *)&this->destY[i]);
-
-	  		this->diffX = _mm_sub_ps(this->diffX, this->x);
-	  		this->diffY = _mm_sub_ps(this->diffY, this->y);
-
-	  		this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
-	  		this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
-
-	  		this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
-	  		this->len = _mm_sqrt_ps(this->sumSqr);
-
-	  		this->desPosX = _mm_div_ps(this->diffX, this->len);
-	  		this->desPosY = _mm_div_ps(this->diffY, this->len);
-
-	  		this->desPosX = _mm_add_ps(this->x, this->desPosX);
-	  		this->desPosY = _mm_add_ps(this->y, this->desPosY);
-
-	  		_mm_store_ps(&this->agentX[i], this->desPosX);
-	  		_mm_store_ps(&this->agentY[i], this->desPosY);
-		}
-
+	  Twaypoint *newDest = agents[i]->getNextDestination();
+	  this->destX[i] = newDest->getx();
+	  this->destY[i] = newDest->gety();
 	}
-      break;
+
+      omp_set_num_threads(num_threads);
+#pragma omp parallel for
+      for (int i = 0; i < agents.size(); i += 4)
+	{
+	  this->x = _mm_load_ps((float *)&this->agentX[i]);
+	  this->y = _mm_load_ps((float *)&this->agentY[i]);
+	  this->diffX = _mm_load_ps((float *)&this->destX[i]);
+	  this->diffY = _mm_load_ps((float *)&this->destY[i]);
+
+	  this->diffX = _mm_sub_ps(this->diffX, this->x);
+	  this->diffY = _mm_sub_ps(this->diffY, this->y);
+
+	  this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
+	  this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
+
+	  this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
+	  this->len = _mm_sqrt_ps(this->sumSqr);
+
+	  this->desPosX = _mm_div_ps(this->diffX, this->len);
+	  this->desPosY = _mm_div_ps(this->diffY, this->len);
+
+	  this->desPosX = _mm_add_ps(this->x, this->desPosX);
+	  this->desPosY = _mm_add_ps(this->y, this->desPosY);
+
+	  _mm_store_ps(&this->agentX[i], this->desPosX);
+	  _mm_store_ps(&this->agentY[i], this->desPosY);
+	}
+
+
+
+
     }
+    break;
   }
+}
 
 
 
