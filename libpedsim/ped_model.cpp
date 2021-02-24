@@ -15,6 +15,7 @@
 #include <omp.h>
 #include <thread>
 #include <math.h>
+#include <cstdio>
 
 
 #include <stdlib.h>
@@ -36,19 +37,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   this->destX.resize(nr_agents);
   this->destY.resize(nr_agents);
   this->destR.resize(nr_agents);
-  
+
   for (int i = 0; i < agents.size(); i++)
     {
-      agents[i]->updateDestination();
+      agents[i]->getStartDestination();
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
       this->destX[i] = agents[i]->destination->getx();
       this->destY[i] = agents[i]->destination->gety();
       this->destR[i] = agents[i]->destination->getr();
-      
-      printf("i = %d\n", i);
     }
-  printf("Outside\n");
 
   // Sets the chosen implemenation. Standard in the given code is SEQ
   this->implementation = implementation;
@@ -79,6 +77,7 @@ void Ped::Model::tick()
   switch(this->implementation){
   case SEQ:
     {
+		printf("Running SEQ\n");
       computeAgentPositions(0, agents.size(), agents);
       break;
     }
@@ -131,88 +130,47 @@ void Ped::Model::tick()
     }
   case VECTOR:
     {
-      for (int i = 0; i < agents.size(); i += 4) 
-	{
-	  // getDesired är inte det vi letar efter, gör bara så att agenterna rör sig åt samma
-	  // håll i oändlighet
-	  std::cout << "inside len thingy at: 0 \n";
-	  agents[i]->getNextDestination();
-	  this->destX[i] = agents[i]->destination->getx();
-	  this->destY[i] = agents[i]->destination->gety();
-	  std::cout << "after assign\n";
-	  
-	  if (i+1 < agents.size())
-	    {
-	      std::cout << "inside len thingy at: 1 \n";
-	      agents[i+1]->getNextDestination();
-	      this->destX[i+1] = agents[i+1]->destination->getx();
-	      this->destY[i+1] = agents[i+1]->destination->gety();
-	      std::cout << "after assign\n";
-	    }
-	  if (i+2< agents.size())
-	    {
-	      std::cout << "inside len thingy at: 2 \n";
-	      agents[i+2]->getNextDestination();
-	      this->destX[i+2] = agents[i+2]->destination->getx();
-	      this->destY[i+2] = agents[i+2]->destination->gety();
-	      std::cout << "after assign\n";
-	    }
-	  if (i+3 < agents.size())
-	    {
-	      std::cout << "inside len thingy at: 3 \n";
-	      agents[i+3]->getNextDestination();
-	      this->destX[i+3] = agents[i+3]->destination->getx();
-	      this->destY[i+3] = agents[i+3]->destination->gety();
-	      std::cout << "after assign\n";
-	    } 
+		for (int i = 0; i < agents.size(); i++)
+		{
+			agents[i]->setX((int)round(this->agentX[i]));
+		  	agents[i]->setY((int)round(this->agentY[i]));
 
-	  this->x = _mm_load_ps(&this->agentX[i]);
-	  this->y = _mm_load_ps(&this->agentY[i]);
-	  this->diffX = _mm_load_ps(&this->destX[i]);
-	  this->diffY = _mm_load_ps(&this->destY[i]);
-	  
-	  this->diffX = _mm_sub_ps(this->diffX, this->x);
-	  this->diffY = _mm_sub_ps(this->diffY, this->y);
-	  
-	  this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
-	  this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
-	  
-	  this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
-	  this->len = _mm_sqrt_ps(this->sumSqr);
-	  
-	  this->desPosX = _mm_div_ps(this->diffX, this->len);
-	  this->desPosY = _mm_div_ps(this->diffY, this->len);
+			Twaypoint *newDest = agents[i]->getNextDestination();
+			this->destX[i] = newDest->getx();
+			this->destY[i] = newDest->gety();
+		}
+	
+    	for (int i = 0; i < agents.size(); i += 4) 
+		{
+			this->x = _mm_load_ps((float *)&this->agentX[i]);
+	  		this->y = _mm_load_ps((float *)&this->agentY[i]);
+	  		this->diffX = _mm_load_ps((float *)&this->destX[i]);
+	  		this->diffY = _mm_load_ps((float *)&this->destY[i]);
 
-	  this->desPosX = _mm_add_ps(this->x, this->desPosX);
-	  this->desPosY = _mm_add_ps(this->y, this->desPosY);
+	  		this->diffX = _mm_sub_ps(this->diffX, this->x);
+	  		this->diffY = _mm_sub_ps(this->diffY, this->y);
 
+	  		this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
+	  		this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
 
-	  _mm_store_ps(&this->agentX[i], this->desPosX);
-	  _mm_store_ps(&this->agentY[i], this->desPosY);
-	  
-	  agents[i]->setX((int)round(this->agentX[i]));
-	  agents[i]->setY((int)round(this->agentY[i]));
-	  
-	  if (i+1 < agents.size())
-	    {
-	      agents[i+1]->setX((int)round(this->agentX[i+1]));
-	      agents[i+1]->setY((int)round(this->agentY[i+1]));
-	    }
-	  if (i+2 < agents.size())
-	    {
-	      agents[i+2]->setX((int)round(this->agentX[i+2]));
-	      agents[i+2]->setY((int)round(this->agentY[i+2]));
-	    }
-	  if (i+3 < agents.size())
-	    {
-	      agents[i+3]->setX((int)round(this->agentX[i+3]));
-	      agents[i+3]->setY((int)round(this->agentY[i+3]));
-	    }
+	  		this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
+	  		this->len = _mm_sqrt_ps(this->sumSqr);
+
+	  		this->desPosX = _mm_div_ps(this->diffX, this->len);
+	  		this->desPosY = _mm_div_ps(this->diffY, this->len);
+
+	  		this->desPosX = _mm_add_ps(this->x, this->desPosX);
+	  		this->desPosY = _mm_add_ps(this->y, this->desPosY);
+
+	  		_mm_store_ps(&this->agentX[i], this->desPosX);
+	  		_mm_store_ps(&this->agentY[i], this->desPosY);
+		}
+
 	}
       break;
     }
   }
-}
+
 
 
   

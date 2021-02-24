@@ -114,7 +114,7 @@ int main(int argc, char*argv[]) {
     std::cout << "After mainwindow\n";
 
     // Default number of steps to simulate. Feel free to change this.
-    const int maxNumberOfStepsToSimulate = 100000;
+    const int maxNumberOfStepsToSimulate = 1000;
 		
 				
 

@@ -48,10 +48,12 @@ namespace Ped {
     // Adds a new waypoint to reach for this agent
     void addWaypoint(Twaypoint* wp);
 
-    Twaypoint* updateDestination();
+    Twaypoint* getStartDestination();
 
     // Returns the next destination to visit
     Twaypoint* getNextDestination();
+
+    bool checkIfReachedDestination();
 
     // The current destination (may require several steps to reach)
     Twaypoint* destination;
