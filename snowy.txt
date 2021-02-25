@@ -1,0 +1,1 @@
+interactive -A g2021002 -M snowy -p core -n 1 -c 8
