@@ -67,7 +67,7 @@ int main(int argc, char*argv[]) {
   // code for choosing implementaion when sim starts. 
   char choice_num;
   Ped::IMPLEMENTATION choice;
-  std::cout<<"Choose implementation: CUDA = 0, VECTOR = 1, OMP = 2, PTHREAD = 3, SEQ = 4\n";
+  std::cout<<"Choose implementation: CUDA = 0, VECTOR = 1, OMP = 2, PTHREAD = 3, SEQ = 4, TASK = 5\n";
   std::cin>>choice_num;
 	
   if (choice_num == '0')
@@ -90,9 +90,13 @@ int main(int argc, char*argv[]) {
     {
       choice = Ped::SEQ;
     }
+  else if (choice_num == '5')
+    {
+      choice = Ped::TASK;
+    }
   else
     {
-      std::cout<<"Bad input, only one number (0-4)\n";
+      std::cout<<"Bad input, only one number (0-5)\n";
       return 0;
     }
 

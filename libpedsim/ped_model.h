@@ -22,7 +22,7 @@ namespace Ped{
 
 	// The implementation modes for Assignment 1 + 2:
 	// chooses which implementation to use for tick()
-	enum IMPLEMENTATION { CUDA, VECTOR, OMP, PTHREAD, SEQ };
+	enum IMPLEMENTATION { CUDA, VECTOR, OMP, PTHREAD, SEQ, TASK };
 
 	class Model
 	{
@@ -69,6 +69,16 @@ namespace Ped{
 
 		// The agents in this scenario
 		std::vector<Tagent*> agents;
+		
+		std::vector<Tagent*> agentsSW;
+		std::vector<Tagent*> agentsNW;
+		std::vector<Tagent*> agentsSE;
+		std::vector<Tagent*> agentsNE;
+		
+		int num_agentsSW;
+		int num_agentsNW;
+		int num_agentsSE;
+		int num_agentsNE;
 
 		// The waypoints in this scenario
 		std::vector<Twaypoint*> destinations;

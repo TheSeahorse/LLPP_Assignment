@@ -29,6 +29,91 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   // Set up agents
   agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
   
+  /*
+  agentsNW = std::vector<Ped::Tagent*>(0);
+  agentsSW = std::vector<Ped::Tagent*>(0);
+  agentsNE = std::vector<Ped::Tagent*>(0);
+  agentsSE = std::vector<Ped::Tagent*>(0);
+  */
+  // count amount of agents in each zone
+  num_agentsSW = 0;
+  num_agentsNW = 0;
+  num_agentsSE = 0;
+  num_agentsNE = 0;
+  for (int i = 0; i < agents.size(); i++)
+    {
+      if (agents[i]->getX() < 80)
+	{
+	  if (agents[i]->getY() < 60)
+	    {
+	      num_agentsNW++;
+	    }
+	  else
+	    {
+	      num_agentsSW++;
+	    }
+	}
+      else
+	{
+	  if (agents[i]->getY() < 60)
+	    {
+	      num_agentsNE++;
+	    }
+	  else
+	    {
+	      num_agentsSE++;
+	    }
+	}
+    }
+
+  std::vector<Tagent*> t_agentsSW(num_agentsSW);
+  std::vector<Tagent*> t_agentsNW(num_agentsNW);
+  std::vector<Tagent*> t_agentsSE(num_agentsSE);
+  std::vector<Tagent*> t_agentsNE(num_agentsNE);
+
+  this->agentsSW = t_agentsSW;
+  this->agentsNW = t_agentsNW;
+  this->agentsSE = t_agentsSE;
+  this->agentsNE = t_agentsNE;
+  // Set up the four "zones" of the board
+  /*
+  agentsSW.reserve(num_agentsSW);
+  agentsNW.reserve(num_agentsNW);
+  agentsSE.reserve(num_agentsSE);
+  agentsNE.reserve(num_agentsNW);
+  */
+  for (int i = 0; i < agents.size(); i++)
+    {
+      std::cout << "inside loop: " << i << "\n";
+      if (agents[i]->getX() < 80)
+	{
+	  if (agents[i]->getY() < 60)
+	    {
+	      std::cout << "NW\n";
+	      agentsNW.push_back(agents[i]);
+	    }
+	  else
+	    {
+	      std::cout << "SW\n";
+	      agentsSW.push_back(agents[i]);
+	    }
+	}
+      else
+	{
+	  if (agents[i]->getY() < 60)
+	    {
+	      std::cout << "NE\n";
+	      agentsNE.push_back(agents[i]);
+	    }
+	  else
+	    {
+	      std::cout << "SE\n";
+	      agentsSE.push_back(agents[i]);
+	    }
+	}
+    }
+
+  printf("success");
   // Set up destinations
   destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
   int nr_agents = agents.size();
@@ -77,109 +162,150 @@ void Ped::Model::tick()
   int num_threads = 4; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
-  switch(this->implementation){
-  case SEQ:
+  switch(this->implementation)
     {
-		// printf("Running SEQ\n");
-      computeAgentPositions(0, agents.size(), agents);
-      break;
-    }
-  case OMP:
-    {
-      omp_set_num_threads(num_threads);
+    case SEQ:
+      {
+	// printf("Running SEQ\n");
+	computeAgentPositions(0, agents.size(), agents);
+	break;
+      }
+    case OMP:
+      {
+	omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(static)
-      for (int i = 0; i < agents.size(); i++) 
-	{
-	  agents[i]->computeNextDesiredPosition();
-	  agents[i]->setX(agents[i]->getDesiredX());
-	  agents[i]->setY(agents[i]->getDesiredY());
-	}
-      break;
-    }
-  case PTHREAD:
-    { 
-      int num_agents = agents.size();
-      int one_slice = num_agents/num_threads;
+	for (int i = 0; i < agents.size(); i++) 
+	  {
+	    agents[i]->computeNextDesiredPosition();
+	    agents[i]->setX(agents[i]->getDesiredX());
+	    agents[i]->setY(agents[i]->getDesiredY());
+	  }
+	break;
+      }
+    case PTHREAD:
+      { 
+	int num_agents = agents.size();
+	int one_slice = num_agents/num_threads;
       
-      /* Comment out the threads you're not using and add "num_agents" as the third argument
-	 to the last thread you're using and make sure that the threads before that have 
-	 one_slice*(thread_number-1) and one_slice*(thread_number) 
-	 as their second and third arguments */
-      std::thread first(computeAgentPositions, 0, one_slice, agents);
-      std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
-      std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
-      std::thread fourth(computeAgentPositions, one_slice*3, num_agents, agents);
-      /*
-	std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
-	std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
-	std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
-	std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
-      */
-      first.join();
-      second.join();
-      third.join();
-      fourth.join();
-      /*
-      fifth.join();
-      sixth.join();
-      seventh.join();
-      eigth.join();
-      */
-      break;
-    }
-  case CUDA:
-    {
-      break;
-    }
-  case VECTOR:
-    {
-		int i;
-		int j;
-		omp_set_num_threads(num_threads);
-		#pragma omp parallel for private(i)
-		for (i = 0; i < agents.size(); i++)
-		{
-			agents[i]->setX((int)round(this->agentX[i]));
-		  	agents[i]->setY((int)round(this->agentY[i]));
+	/* Comment out the threads you're not using and add "num_agents" as the third argument
+	   to the last thread you're using and make sure that the threads before that have 
+	   one_slice*(thread_number-1) and one_slice*(thread_number) 
+	   as their second and third arguments */
+	std::thread first(computeAgentPositions, 0, one_slice, agents);
+	std::thread second(computeAgentPositions, one_slice, one_slice*2, agents);
+	std::thread third(computeAgentPositions, one_slice*2, one_slice*3, agents);
+	std::thread fourth(computeAgentPositions, one_slice*3, num_agents, agents);
+	/*
+	  std::thread fifth(computeAgentPositions, one_slice*4, one_slice*5, agents);
+	  std::thread sixth(computeAgentPositions, one_slice*5, one_slice*6, agents);
+	  std::thread seventh(computeAgentPositions, one_slice*6, one_slice*7, agents);
+	  std::thread eigth(computeAgentPositions, one_slice*7, num_agents, agents);
+	*/
+	first.join();
+	second.join();
+	third.join();
+	fourth.join();
+	/*
+	  fifth.join();
+	  sixth.join();
+	  seventh.join();
+	  eigth.join();
+	*/
+	break;
+      }
+    case CUDA:
+      {
+	break;
+      }
+    case VECTOR:
+      {
+	int i;
+	int j;
+	omp_set_num_threads(num_threads);
+#pragma omp parallel for private(i)
+	for (i = 0; i < agents.size(); i++)
+	  {
+	    agents[i]->setX((int)round(this->agentX[i]));
+	    agents[i]->setY((int)round(this->agentY[i]));
 
-			Twaypoint *newDest = agents[i]->getNextDestination();
-			this->destX[i] = newDest->getx();
-			this->destY[i] = newDest->gety();
-		}
+	    Twaypoint *newDest = agents[i]->getNextDestination();
+	    this->destX[i] = newDest->getx();
+	    this->destY[i] = newDest->gety();
+	  }
 
 
-		#pragma omp simd
-    	for (j = 0; j < agents.size(); j += 4) 
-		{
-			this->x = _mm_load_ps(&this->agentX[j]);
-	  		this->y = _mm_load_ps(&this->agentY[j]);
-	  		this->diffX = _mm_load_ps(&this->destX[j]);
-	  		this->diffY = _mm_load_ps(&this->destY[j]);
+#pragma omp simd
+	for (j = 0; j < agents.size(); j += 4) 
+	  {
+	    this->x = _mm_load_ps(&this->agentX[j]);
+	    this->y = _mm_load_ps(&this->agentY[j]);
+	    this->diffX = _mm_load_ps(&this->destX[j]);
+	    this->diffY = _mm_load_ps(&this->destY[j]);
 
-	  		this->diffX = _mm_sub_ps(this->diffX, this->x);
-	  		this->diffY = _mm_sub_ps(this->diffY, this->y);
+	    this->diffX = _mm_sub_ps(this->diffX, this->x);
+	    this->diffY = _mm_sub_ps(this->diffY, this->y);
 
-	  		this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
-	  		this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
+	    this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
+	    this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
 
-	  		this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
-	  		this->len = _mm_sqrt_ps(this->sumSqr);
+	    this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
+	    this->len = _mm_sqrt_ps(this->sumSqr);
 
-	  		this->desPosX = _mm_div_ps(this->diffX, this->len);
-	  		this->desPosY = _mm_div_ps(this->diffY, this->len);
+	    this->desPosX = _mm_div_ps(this->diffX, this->len);
+	    this->desPosY = _mm_div_ps(this->diffY, this->len);
 
-	  		this->desPosX = _mm_add_ps(this->x, this->desPosX);
-	  		this->desPosY = _mm_add_ps(this->y, this->desPosY);
+	    this->desPosX = _mm_add_ps(this->x, this->desPosX);
+	    this->desPosY = _mm_add_ps(this->y, this->desPosY);
 
-	  		_mm_store_ps(&this->agentX[j], this->desPosX);
-	  		_mm_store_ps(&this->agentY[j], this->desPosY);
+	    _mm_store_ps(&this->agentX[j], this->desPosX);
+	    _mm_store_ps(&this->agentY[j], this->desPosY);
 
-		}
-
+	  }
+	break;
+      }
+    case TASK:
+      {
+	
+        omp_set_num_threads(num_threads);
+#pragma omp parallel
+	{
+#pragma omp task
+	  {
+	    for (int i = 0; i < agentsSW.size(); i++)
+	      {
+		agentsSW[i]->computeNextDesiredPosition();
+		move(agentsSW[i]);
+	      }
+	  }
+#pragma omp task
+	  {
+	    for (int i = 0; i < agentsNW.size(); i++)
+	      {
+		agentsNW[i]->computeNextDesiredPosition();
+		move(agentsNW[i]);
+	      }
+	  }
+#pragma omp task
+	  {
+	    for (int i = 0; i < agentsSE.size(); i++)
+	      {
+		agentsSE[i]->computeNextDesiredPosition();
+		move(agentsSE[i]);
+	      }
+	  }
+#pragma omp task
+	  {
+	    for (int i = 0; i < agentsNE.size(); i++)
+	      {
+		agentsNE[i]->computeNextDesiredPosition();
+		move(agentsNE[i]);
+	      }
+	  }
 	}
-      break;
+      }
     }
-  }
+}
+
 
 
 
@@ -195,52 +321,52 @@ void Ped::Model::tick()
 // be moved to a location close to it.
 void Ped::Model::move(Ped::Tagent *agent)
 {
-	// Search for neighboring agents
-	set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
+  // Search for neighboring agents
+  set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
 
-	// Retrieve their positions
-	std::vector<std::pair<int, int> > takenPositions;
-	for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
-		std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
-		takenPositions.push_back(position);
-	}
+  // Retrieve their positions
+  std::vector<std::pair<int, int> > takenPositions;
+  for (std::set<const Ped::Tagent*>::iterator neighborIt = neighbors.begin(); neighborIt != neighbors.end(); ++neighborIt) {
+    std::pair<int, int> position((*neighborIt)->getX(), (*neighborIt)->getY());
+    takenPositions.push_back(position);
+  }
 
-	// Compute the three alternative positions that would bring the agent
-	// closer to his desiredPosition, starting with the desiredPosition itself
-	std::vector<std::pair<int, int> > prioritizedAlternatives;
-	std::pair<int, int> pDesired(agent->getDesiredX(), agent->getDesiredY());
-	prioritizedAlternatives.push_back(pDesired);
+  // Compute the three alternative positions that would bring the agent
+  // closer to his desiredPosition, starting with the desiredPosition itself
+  std::vector<std::pair<int, int> > prioritizedAlternatives;
+  std::pair<int, int> pDesired(agent->getDesiredX(), agent->getDesiredY());
+  prioritizedAlternatives.push_back(pDesired);
 
-	int diffX = pDesired.first - agent->getX();
-	int diffY = pDesired.second - agent->getY();
-	std::pair<int, int> p1, p2;
-	if (diffX == 0 || diffY == 0)
-	{
-		// Agent wants to walk straight to North, South, West or East
-		p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
-		p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
-	}
-	else {
-		// Agent wants to walk diagonally
-		p1 = std::make_pair(pDesired.first, agent->getY());
-		p2 = std::make_pair(agent->getX(), pDesired.second);
-	}
-	prioritizedAlternatives.push_back(p1);
-	prioritizedAlternatives.push_back(p2);
+  int diffX = pDesired.first - agent->getX();
+  int diffY = pDesired.second - agent->getY();
+  std::pair<int, int> p1, p2;
+  if (diffX == 0 || diffY == 0)
+    {
+      // Agent wants to walk straight to North, South, West or East
+      p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
+      p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
+    }
+  else {
+    // Agent wants to walk diagonally
+    p1 = std::make_pair(pDesired.first, agent->getY());
+    p2 = std::make_pair(agent->getX(), pDesired.second);
+  }
+  prioritizedAlternatives.push_back(p1);
+  prioritizedAlternatives.push_back(p2);
 
-	// Find the first empty alternative position
-	for (std::vector<pair<int, int> >::iterator it = prioritizedAlternatives.begin(); it != prioritizedAlternatives.end(); ++it) {
+  // Find the first empty alternative position
+  for (std::vector<pair<int, int> >::iterator it = prioritizedAlternatives.begin(); it != prioritizedAlternatives.end(); ++it) {
 
-		// If the current position is not yet taken by any neighbor
-		if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
+    // If the current position is not yet taken by any neighbor
+    if (std::find(takenPositions.begin(), takenPositions.end(), *it) == takenPositions.end()) {
 
-			// Set the agent's position 
-			agent->setX((*it).first);
-			agent->setY((*it).second);
+      // Set the agent's position 
+      agent->setX((*it).first);
+      agent->setY((*it).second);
 
-			break;
-		}
-	}
+      break;
+    }
+  }
 }
 
 /// Returns the list of neighbors within dist of the point x/y. This
