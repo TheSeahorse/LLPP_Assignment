@@ -28,60 +28,10 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   
   // Set up agents
   agents = std::vector<Ped::Tagent*>(agentsInScenario.begin(), agentsInScenario.end());
+
+  // Set up destinations
+  destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
   
-  /*
-  agentsNW = std::vector<Ped::Tagent*>(0);
-  agentsSW = std::vector<Ped::Tagent*>(0);
-  agentsNE = std::vector<Ped::Tagent*>(0);
-  agentsSE = std::vector<Ped::Tagent*>(0);
-  */
-  // count amount of agents in each zone
-  num_agentsSW = 0;
-  num_agentsNW = 0;
-  num_agentsSE = 0;
-  num_agentsNE = 0;
-  for (int i = 0; i < agents.size(); i++)
-    {
-      if (agents[i]->getX() < 80)
-	{
-	  if (agents[i]->getY() < 60)
-	    {
-	      num_agentsNW++;
-	    }
-	  else
-	    {
-	      num_agentsSW++;
-	    }
-	}
-      else
-	{
-	  if (agents[i]->getY() < 60)
-	    {
-	      num_agentsNE++;
-	    }
-	  else
-	    {
-	      num_agentsSE++;
-	    }
-	}
-    }
-
-  std::vector<Tagent*> t_agentsSW(num_agentsSW);
-  std::vector<Tagent*> t_agentsNW(num_agentsNW);
-  std::vector<Tagent*> t_agentsSE(num_agentsSE);
-  std::vector<Tagent*> t_agentsNE(num_agentsNE);
-
-  this->agentsSW = t_agentsSW;
-  this->agentsNW = t_agentsNW;
-  this->agentsSE = t_agentsSE;
-  this->agentsNE = t_agentsNE;
-  // Set up the four "zones" of the board
-  /*
-  agentsSW.reserve(num_agentsSW);
-  agentsNW.reserve(num_agentsNW);
-  agentsSE.reserve(num_agentsSE);
-  agentsNE.reserve(num_agentsNW);
-  */
   for (int i = 0; i < agents.size(); i++)
     {
       std::cout << "inside loop: " << i << "\n";
@@ -90,12 +40,12 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  if (agents[i]->getY() < 60)
 	    {
 	      std::cout << "NW\n";
-	      agentsNW.push_back(agents[i]);
+	      this->agentsNW.push_back(agents[i]);
 	    }
 	  else
 	    {
 	      std::cout << "SW\n";
-	      agentsSW.push_back(agents[i]);
+	      this->agentsSW.push_back(agents[i]);
 	    }
 	}
       else
@@ -103,19 +53,16 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
 	  if (agents[i]->getY() < 60)
 	    {
 	      std::cout << "NE\n";
-	      agentsNE.push_back(agents[i]);
+	      this->agentsNE.push_back(agents[i]);
 	    }
 	  else
 	    {
 	      std::cout << "SE\n";
-	      agentsSE.push_back(agents[i]);
+	      this->agentsSE.push_back(agents[i]);
 	    }
 	}
     }
 
-  printf("success");
-  // Set up destinations
-  destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
   int nr_agents = agents.size();
   nr_agents += (nr_agents % 4);
   this->agentX.resize(nr_agents); 

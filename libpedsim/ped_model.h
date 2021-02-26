@@ -74,11 +74,6 @@ namespace Ped{
 		std::vector<Tagent*> agentsNW;
 		std::vector<Tagent*> agentsSE;
 		std::vector<Tagent*> agentsNE;
-		
-		int num_agentsSW;
-		int num_agentsNW;
-		int num_agentsSE;
-		int num_agentsNE;
 
 		// The waypoints in this scenario
 		std::vector<Twaypoint*> destinations;
