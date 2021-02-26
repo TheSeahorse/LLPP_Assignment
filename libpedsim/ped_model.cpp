@@ -324,10 +324,27 @@ void Ped::Model::move(Ped::Tagent *agent)
 /// \param   y the y coordinate
 /// \param   dist the distance around x/y that will be searched for agents (search field is a square in the current implementation)
 set<const Ped::Tagent*> Ped::Model::getNeighbors(int x, int y, int dist) const {
+  
+  std::vector<Ped::Tagent*> neighbors(0);
 
-	// create the output list
-	// ( It would be better to include only the agents close by, but this programmer is lazy.)	
-	return set<const Ped::Tagent*>(agents.begin(), agents.end());
+  for (int i = 0; i < agents.size(); i++)
+    {
+      int aX = agents[i]->getX();
+      int aY = agents[i]->getY();
+      
+      if (aX < (x + dist) and 
+	  aX > (x - dist) and
+	  aY < (y + dist) and
+	  aY > (y - dist) and
+	  (aX != x or aY != y))
+	{
+	  neighbors.push_back(agents[i]);
+	}
+    }
+  // create the output list
+  // ( It would be better to include only the agents close by, but this programmer is lazy.)
+  std::cout << "amount of neighbors: " << neighbors.size() << "\n";
+  return set<const Ped::Tagent*>(neighbors.begin(), neighbors.end());
 }
 
 void Ped::Model::cleanup() {
