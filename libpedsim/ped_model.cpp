@@ -40,6 +40,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   this->destX.resize(vector_size);
   this->destY.resize(vector_size);
   this->destR.resize(vector_size);
+  this->reachedDest.resize(vector_size);
 
   for (int i = 0; i < agents.size(); i++)
     {
@@ -49,8 +50,9 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
       this->destX[i] = agents[i]->destination->getx();
       this->destY[i] = agents[i]->destination->gety();
       this->destR[i] = agents[i]->destination->getr();
+	  this->reachedDest[i] = (float)0;
     }
-
+	printf("wtf\n");
   // Sets the chosen implemenation. Standard in the given code is SEQ
   this->implementation = implementation;
 	
@@ -74,7 +76,7 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 4; //change this variable to chose number of threads we run on
+  int num_threads = 8; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
   switch(this->implementation){
@@ -132,44 +134,71 @@ void Ped::Model::tick()
     }
   case VECTOR:
     {
-      omp_set_num_threads(num_threads);
-#pragma omp parallel for
-      for (int i = 0; i < agents.size(); i++)
+    omp_set_num_threads(num_threads);
+	bool update = false;
+	#pragma omp parallel for
+    for (int i = 0; i < agents.size(); i++)
 	{
 	  agents[i]->setX((int)round(this->agentX[i]));
 	  agents[i]->setY((int)round(this->agentY[i]));
 
-	  Twaypoint *newDest = agents[i]->getNextDestination();
-	  this->destX[i] = newDest->getx();
-	  this->destY[i] = newDest->gety();
 	}
 
-      omp_set_num_threads(num_threads);
-#pragma omp parallel for
+
       for (int i = 0; i < agents.size(); i += 4)
 	{
-	  this->x = _mm_load_ps((float *)&this->agentX[i]);
-	  this->y = _mm_load_ps((float *)&this->agentY[i]);
-	  this->diffX = _mm_load_ps((float *)&this->destX[i]);
-	  this->diffY = _mm_load_ps((float *)&this->destY[i]);
+	  	this->x = _mm_load_ps((float *)&this->agentX[i]);
+	  	this->y = _mm_load_ps((float *)&this->agentY[i]);
+	  	this->r = _mm_load_ps((float *)&this->destR[i]);
+	  	this->diffX = _mm_load_ps((float *)&this->destX[i]);
+	  	this->diffY = _mm_load_ps((float *)&this->destY[i]);
 
-	  this->diffX = _mm_sub_ps(this->diffX, this->x);
-	  this->diffY = _mm_sub_ps(this->diffY, this->y);
+	  	this->diffX = _mm_sub_ps(this->diffX, this->x);
+	  	this->diffY = _mm_sub_ps(this->diffY, this->y);
 
-	  this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
-	  this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
+	  	this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
+	  	this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
 
-	  this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
-	  this->len = _mm_sqrt_ps(this->sumSqr);
+	  	this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
+	  	this->len = _mm_sqrt_ps(this->sumSqr);
 
-	  this->desPosX = _mm_div_ps(this->diffX, this->len);
-	  this->desPosY = _mm_div_ps(this->diffY, this->len);
+	  	this->newDestBool = _mm_cmplt_ps(this->len, this->r);
 
-	  this->desPosX = _mm_add_ps(this->x, this->desPosX);
-	  this->desPosY = _mm_add_ps(this->y, this->desPosY);
+	  	_mm_store_ps(&this->reachedDest[i], this->newDestBool);
+		for(int j = i; j < i+4; j++)
+		{
+			if (this->reachedDest[j] != 0)
+			{
+				Twaypoint *newDest = agents[j]->newDestination();
+	  			this->destX[j] = newDest->getx();
+	  			this->destY[j] = newDest->gety();
+				update = true;
+			}
+		}
 
-	  _mm_store_ps(&this->agentX[i], this->desPosX);
-	  _mm_store_ps(&this->agentY[i], this->desPosY);
+		if(update)
+		{
+	  	this->diffX = _mm_load_ps((float *)&this->destX[i]);
+	  	this->diffY = _mm_load_ps((float *)&this->destY[i]);
+
+	  	this->diffX = _mm_sub_ps(this->diffX, this->x);
+	  	this->diffY = _mm_sub_ps(this->diffY, this->y);
+
+	  	this->sqrX = _mm_mul_ps(this->diffX, this->diffX);
+	  	this->sqrY = _mm_mul_ps(this->diffY, this->diffY);
+
+	  	this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
+	  	this->len = _mm_sqrt_ps(this->sumSqr);
+		}
+
+	 	this->desPosX = _mm_div_ps(this->diffX, this->len);
+	 	this->desPosY = _mm_div_ps(this->diffY, this->len);
+
+	  	this->desPosX = _mm_add_ps(this->x, this->desPosX);
+	  	this->desPosY = _mm_add_ps(this->y, this->desPosY);
+
+	  	_mm_store_ps(&this->agentX[i], this->desPosX);
+	  	_mm_store_ps(&this->agentY[i], this->desPosY);
 	}
 
 

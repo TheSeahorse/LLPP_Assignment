@@ -42,7 +42,7 @@ namespace Ped{
 	  std::vector<float> destX;
 	  std::vector<float> destY;
 	  std::vector<float> destR;
-	  std::vector<bool> reachedDest;
+	  std::vector<float> reachedDest;
 	  
 	  //const std::vector<float> getAgentX() const {return agentX;};
 	  //const std::vector<float> getAgentY() const {return agentY;};
