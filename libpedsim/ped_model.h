@@ -56,7 +56,7 @@ namespace Ped{
 	  // Moves an agent to the right array if they've crossed.
 	  void moveAgentToArray(Ped::Tagent *agent);
 
-	  void computeAndMove(Ped::Tagent *agents);
+	  void computeAndMove(Ped::Tagent *agents, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector);
 
 	  bool checkDesired(Ped::Tagent *agent);
 
@@ -92,8 +92,7 @@ namespace Ped{
 		std::vector<Twaypoint*> destinations;
 
 		// Moves an agent towards its next position
-		void move(Ped::Tagent *agent);
-		void moveSEQ(Ped::Tagent *agent);
+		void move(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector);
 		
 		
 		////////////
@@ -101,7 +100,7 @@ namespace Ped{
 		///////////////////////////////////////////////
 
 		// Returns the set of neighboring agents for the specified position
-		set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
+		set<const Ped::Tagent*> getNeighbors(int x, int y, int dist, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector) const;
 
 		////////////
 		/// Everything below here won't be relevant until Assignment 4

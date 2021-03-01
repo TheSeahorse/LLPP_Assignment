@@ -104,10 +104,11 @@ void Ped::Model::tick()
     case SEQ:
       {
 	// printf("Running SEQ\n");
+	std::vector<Tagent *> tempAgent;
 	for (int i = 0; i < agents.size(); i++)
 	  {
 	    agents[i]->computeNextDesiredPosition();
-	    move(agents[i]);
+	    move(agents[i], agents, tempAgent);
 	  }
 	//computeAgentPositions(0, agents.size(), agents);
 	break;
@@ -223,7 +224,7 @@ void Ped::Model::tick()
 		  else 
 		    {
 		      this->agentsSW[i]->computeNextDesiredPosition();
-		      move(this->agentsSW[i]);
+		      move(this->agentsSW[i], this->agentsSW, this->tempSW);
 		    }
 		}
 	    }
@@ -240,7 +241,7 @@ void Ped::Model::tick()
 		  else 
 		    {
 		      this->agentsNW[i]->computeNextDesiredPosition();
-		      move(this->agentsNW[i]);
+		      move(this->agentsNW[i], this->agentsNW, this->tempNW);
 		    }
 		}
 	    }
@@ -257,7 +258,7 @@ void Ped::Model::tick()
 		  else 
 		    {
 		      this->agentsSE[i]->computeNextDesiredPosition();
-		      move(this->agentsSE[i]);
+		      move(this->agentsSE[i], this->agentsSE, this->tempSE);
 		    }
 		}
 	    }
@@ -274,7 +275,7 @@ void Ped::Model::tick()
 		  else 
 		    {
 		      this->agentsNE[i]->computeNextDesiredPosition();
-		      move(this->agentsNE[i]);
+		      move(this->agentsNE[i], this->agentsNE, this->tempNE);
 		    }
 		}
 	    }
@@ -284,29 +285,33 @@ void Ped::Model::tick()
 	}
 	int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
 
+
+
 	for(int i=0; i < largestArray; i++)
 	{
+
 		if(i < this->tempSW.size())
 		{
-			computeAndMove(this->tempSW[i]);
+			computeAndMove(this->tempSW[i], this->tempSW, this->agentsSW);
 		}
 	
 		if(i < this->tempNW.size())
 		{
-			computeAndMove(this->tempNW[i]);
+			computeAndMove(this->tempNW[i], this->tempNW, this->agentsNW);
 		}
 		
 		if(i < this->tempSE.size())
 		{
-			computeAndMove(this->tempSE[i]);
+			computeAndMove(this->tempSE[i], this->tempSE, this->agentsSE);
 		}
 		
 		if(i < this->tempNE.size())
 		{
-			computeAndMove(this->tempNE[i]);
+			computeAndMove(this->tempNE[i], this->tempNE, this->agentsNE);
 		}
 
 	}
+
 	this->tempSE.clear();
 	this->tempNE.clear();
 	this->tempSW.clear();
@@ -320,10 +325,10 @@ void Ped::Model::tick()
 /// Don't use this for Assignment 1!
 ///////////////////////////////////////////////
 
-void Ped::Model::computeAndMove(Ped::Tagent *agent)
+void Ped::Model::computeAndMove(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector)
 {
 	agent->computeNextDesiredPosition();
-	move(agent);
+	move(agent, agentVector, tempVector);
 	moveAgentToArray(agent);
 }
 
@@ -376,10 +381,10 @@ void Ped::Model::moveAgentToArray(Ped::Tagent *agent)
 
 // Moves the agent to the next desired position. If already taken, it will
 // be moved to a location close to it.
-void Ped::Model::move(Ped::Tagent *agent)
+void Ped::Model::move(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector)
 {
   // Search for neighboring agents
-  set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2);
+  set<const Ped::Tagent *> neighbors = getNeighbors(agent->getX(), agent->getY(), 2, agentVector, tempVector);
 
   // Retrieve their positions
   std::vector<std::pair<int, int>> takenPositions;
@@ -437,15 +442,16 @@ void Ped::Model::move(Ped::Tagent *agent)
 /// \param   x the x coordinate
 /// \param   y the y coordinate
 /// \param   dist the distance around x/y that will be searched for agents (search field is a square in the current implementation)
-set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist) const
+set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector) const
 {
 
   std::vector<Ped::Tagent *> neighbors(0);
 
-  for (int i = 0; i < agents.size(); i++)
+//   for (int i = 0; i < agents.size(); i++)
+	for (int i = 0; i < agentVector.size(); i++)
     {
-      int aX = agents[i]->getX();
-      int aY = agents[i]->getY();
+      int aX = agentVector[i]->getX();
+      int aY = agentVector[i]->getY();
 
       if (aX < (x + dist) and
 	  aX > (x - dist) and
@@ -453,9 +459,25 @@ set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist) const
 	  aY > (y - dist) and
 	  (aX != x or aY != y))
 	{
-	  	neighbors.push_back(agents[i]);
+	  	neighbors.push_back(agentVector[i]);
 	}
     }
+
+	for (int i = 0; i < tempVector.size(); i++)
+    {
+      int aX = tempVector[i]->getX();
+      int aY = tempVector[i]->getY();
+
+      if (aX < (x + dist) and
+	  aX > (x - dist) and
+	  aY < (y + dist) and
+	  aY > (y - dist) and
+	  (aX != x or aY != y))
+	{
+	  	neighbors.push_back(tempVector[i]);
+	}
+    }
+
   // create the output list
   // ( It would be better to include only the agents close by, but this programmer is lazy.)
   //   std::cout << "amount of neighbors: " << neighbors.size() << "\n";
