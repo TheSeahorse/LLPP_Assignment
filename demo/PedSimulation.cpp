@@ -35,7 +35,7 @@ void PedSimulation::simulateOneStep()
 void PedSimulation::runSimulationWithQt(int maxNumberOfStepsToSimulate)
 {
 	maxSimulationSteps = maxNumberOfStepsToSimulate;
-	// movetimer.setInterval(50); // Limits the simulation to 20 FPS (if one so whiches).
+	movetimer.setInterval(100); // Limits the simulation to 20 FPS (if one so whiches).
 	QObject::connect(&movetimer, SIGNAL(timeout()), this, SLOT(simulateOneStep()));
 	movetimer.start();
 }
