@@ -76,7 +76,7 @@ int main(int argc, char*argv[]) {
     }
   else if (choice_num == '1')
     { 
-      choice  = Ped:: VECTOR;
+      choice  = Ped::VECTOR;
     }
   else if (choice_num == '2')
     {
@@ -109,16 +109,13 @@ int main(int argc, char*argv[]) {
     ParseScenario parser(scenefile);
 		
     model.setup(parser.getAgents(), parser.getWaypoints(), choice);
-    std::cout << "Outside in main\n";
 
     // GUI related set ups
     QApplication app(argc, argv);
-    std::cout << "Before mainwindow\n";
     MainWindow mainwindow(model);
-    std::cout << "After mainwindow\n";
 
     // Default number of steps to simulate. Feel free to change this.
-    const int maxNumberOfStepsToSimulate = 100000;
+    const int maxNumberOfStepsToSimulate = 1000;//00;
 		
 				
 
@@ -168,7 +165,6 @@ int main(int argc, char*argv[]) {
     // Graphics version
     else
       {
-	std::cout << "Before simulation\n";
 	PedSimulation simulation(model, mainwindow);
 
 	cout << "Demo setup complete, running ..." << endl;
@@ -192,6 +188,6 @@ int main(int argc, char*argv[]) {
 
   cout << "Done" << endl;
   cout << "Type Enter to quit.." << endl;
-  getchar(); // Wait for any key. Windows convenience...
+  // getchar(); // Wait for any key. Windows convenience...
   return retval;
 }

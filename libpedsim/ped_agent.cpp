@@ -33,7 +33,6 @@ void Ped::Tagent::computeNextDesiredPosition() {
 	if (destination == NULL) {
 		// no destination, no need to
 		// compute where to move to
-    printf("Destination is NULL\n");
 		return;
 	}
         

@@ -37,12 +37,14 @@ namespace Ped{
 	  // Returns the agents of this scenario
 	  const std::vector<Tagent*> getAgents() const { return agents; };
 	  
-	  std::vector<float> agentX;
-	  std::vector<float> agentY;
-	  std::vector<float> destX;
-	  std::vector<float> destY;
-	  std::vector<float> destR;
-	  std::vector<bool> reachedDest;
+	std::vector<float> agentX;
+	std::vector<float> agentY;
+	std::vector<float> destX;
+	std::vector<float> destY;
+	std::vector<float> destR;
+	std::vector<bool> reachedDest;
+
+
 	  
 	  //const std::vector<float> getAgentX() const {return agentX;};
 	  //const std::vector<float> getAgentY() const {return agentY;};
@@ -51,7 +53,9 @@ namespace Ped{
 	  // Adds an agent to the tree structure
 	  void placeAgent(const Ped::Tagent *a);
 	  
-	  
+	  // Moves an agent to the right array if they've crossed.
+	  void moveAgentToArray(Ped::Tagent *agent, char *section);
+
 	  // Cleans up the tree and restructures it. Worth calling every now and then.
 	  void cleanup();
 	  ~Model();
@@ -74,6 +78,11 @@ namespace Ped{
 		std::vector<Tagent*> agentsNW;
 		std::vector<Tagent*> agentsSE;
 		std::vector<Tagent*> agentsNE;
+
+		std::vector<Tagent*> tempNW;
+		std::vector<Tagent*> tempSW;
+		std::vector<Tagent*> tempNE;
+		std::vector<Tagent*> tempSE;
 
 		// The waypoints in this scenario
 		std::vector<Twaypoint*> destinations;
