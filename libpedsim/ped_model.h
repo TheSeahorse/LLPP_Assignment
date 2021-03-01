@@ -56,9 +56,9 @@ namespace Ped{
 	  // Moves an agent to the right array if they've crossed.
 	  void moveAgentToArray(Ped::Tagent *agent);
 
-	  void computeAndMove(Ped::Tagent *agents, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector);
+	  void computeAndMove(Ped::Tagent *agents, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> allTemps);
 
-	  bool checkDesired(Ped::Tagent *agent);
+	  bool checkPosition(Ped::Tagent *agent);
 
 	  // Cleans up the tree and restructures it. Worth calling every now and then.
 	  void cleanup();

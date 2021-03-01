@@ -215,7 +215,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSW.size(); i++)
 		{
-			if(checkDesired(agentsSW[i]))
+		  if(checkPosition(agentsSW[i]))
 		    {
 		      this->tempSW.push_back(this->agentsSW[i]);
 		      this->agentsSW.erase(this->agentsSW.begin() + i);
@@ -232,8 +232,8 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNW.size(); i++)
 		{
-		    if(checkDesired(agentsNW[i]))
-			{
+		  if(checkPosition(agentsNW[i]))
+		    {
 		      this->tempNW.push_back(this->agentsNW[i]);
 		      this->agentsNW.erase(this->agentsNW.begin() + i);
 		      i--;
@@ -249,8 +249,8 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSE.size(); i++)
 		{
-		    if(checkDesired(agentsSE[i]))
-			{
+		  if(checkPosition(agentsSE[i]))
+		    {
 		      this->tempSE.push_back(this->agentsSE[i]);
 		      this->agentsSE.erase(this->agentsSE.begin() + i);
 		      i--;
@@ -266,8 +266,8 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNE.size(); i++)
 		{
-		    if(checkDesired(agentsNE[i]))
-			{
+		  if(checkPosition(agentsNE[i]))
+		    {
 		      this->tempNE.push_back(this->agentsNE[i]);
 		      this->agentsNE.erase(this->agentsNE.begin() + i);
 		      i--;
@@ -285,39 +285,45 @@ void Ped::Model::tick()
 	}
 	int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
 
-
+	std::vector<Ped::Tagent *> allTemps;
+	allTemps.insert(allTemps.end(), this->tempSE.begin(), this->tempSE.end());
+	allTemps.insert(allTemps.end(), this->tempNE.begin(), this->tempNE.end());
+	allTemps.insert(allTemps.end(), this->tempSW.begin(), this->tempSW.end());
+	allTemps.insert(allTemps.end(), this->tempNW.begin(), this->tempNW.end());
 
 	for(int i=0; i < largestArray; i++)
-	{
+	  {
 
-		if(i < this->tempSW.size())
-		{
-			computeAndMove(this->tempSW[i], this->tempSW, this->agentsSW);
-		}
+	    if(i < this->tempSW.size())
+	      {
+		computeAndMove(this->tempSW[i], this->agentsSW, allTemps);
+	      }
 	
-		if(i < this->tempNW.size())
-		{
-			computeAndMove(this->tempNW[i], this->tempNW, this->agentsNW);
-		}
+	    if(i < this->tempNW.size())
+	      {
+		computeAndMove(this->tempNW[i], this->agentsNW, allTemps);
+	      }
 		
-		if(i < this->tempSE.size())
-		{
-			computeAndMove(this->tempSE[i], this->tempSE, this->agentsSE);
-		}
+	    if(i < this->tempSE.size())
+	      {
+		computeAndMove(this->tempSE[i], this->agentsSE, allTemps);
+	      }
 		
-		if(i < this->tempNE.size())
-		{
-			computeAndMove(this->tempNE[i], this->tempNE, this->agentsNE);
-		}
+	    if(i < this->tempNE.size())
+	      {
+		computeAndMove(this->tempNE[i], this->agentsNE, allTemps);
+	      }
 
-	}
+	  }
 
 	this->tempSE.clear();
 	this->tempNE.clear();
 	this->tempSW.clear();
 	this->tempNW.clear();
+	//int sum = agentsSW.size() + agentsNW.size() + agentsSE.size() + agentsNE.size();
+	//std::cout << "Agents: " << sum << "\n";
+      }
     }
-}
 }
 
 ////////////
@@ -325,57 +331,57 @@ void Ped::Model::tick()
 /// Don't use this for Assignment 1!
 ///////////////////////////////////////////////
 
-void Ped::Model::computeAndMove(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> tempVector)
+void Ped::Model::computeAndMove(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> allTemps)
 {
-	agent->computeNextDesiredPosition();
-	move(agent, agentVector, tempVector);
-	moveAgentToArray(agent);
+  agent->computeNextDesiredPosition();
+  move(agent, agentVector, allTemps);
+  moveAgentToArray(agent);
 }
 
-bool Ped::Model::checkDesired(Ped::Tagent *agent)
+bool Ped::Model::checkPosition(Ped::Tagent *agent)
 {
-	if((agent->getDesiredX() > 78 and
-    agent->getDesiredX() < 82) or
-    (agent->getDesiredY() > 58 and
-    agent->getDesiredY() < 62))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+  if((agent->getX() >= 78 and
+      agent->getX() <= 82) or
+     (agent->getY() >= 58 and
+      agent->getY() <= 62))
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
 }
 
 void Ped::Model::moveAgentToArray(Ped::Tagent *agent)
 {
 
-	if (agent->getX() < 80)
+  if (agent->getX() < 80)
+    {
+      if (agent->getY() < 60)
 	{
-		if (agent->getY() < 60)
-		{
-			agentsNW.push_back(std::move(agent));
-		}
-		else
-		{
-			agentsSW.push_back(std::move(agent));
-		}
+	  agentsNW.push_back(std::move(agent));
 	}
-	else if (agent->getX() >= 80)
+      else
 	{
-		if (agent->getY() < 60)
-		{
-			agentsNE.push_back(std::move(agent));
-		}
-		else
-		{
-			agentsSE.push_back(std::move(agent));
-		}
+	  agentsSW.push_back(std::move(agent));
 	}
-	else
+    }
+  else if (agent->getX() >= 80)
+    {
+      if (agent->getY() < 60)
 	{
-		printf("Somethings wrong!\n");
+	  agentsNE.push_back(std::move(agent));
 	}
+      else
+	{
+	  agentsSE.push_back(std::move(agent));
+	}
+    }
+  else
+    {
+      printf("Somethings wrong!\n");
+    }
 
 }
 
@@ -447,8 +453,8 @@ set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist, std::v
 
   std::vector<Ped::Tagent *> neighbors(0);
 
-//   for (int i = 0; i < agents.size(); i++)
-	for (int i = 0; i < agentVector.size(); i++)
+  //   for (int i = 0; i < agents.size(); i++)
+  for (int i = 0; i < agentVector.size(); i++)
     {
       int aX = agentVector[i]->getX();
       int aY = agentVector[i]->getY();
@@ -459,11 +465,11 @@ set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist, std::v
 	  aY > (y - dist) and
 	  (aX != x or aY != y))
 	{
-	  	neighbors.push_back(agentVector[i]);
+	  neighbors.push_back(agentVector[i]);
 	}
     }
 
-	for (int i = 0; i < tempVector.size(); i++)
+  for (int i = 0; i < tempVector.size(); i++)
     {
       int aX = tempVector[i]->getX();
       int aY = tempVector[i]->getY();
@@ -474,7 +480,7 @@ set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist, std::v
 	  aY > (y - dist) and
 	  (aX != x or aY != y))
 	{
-	  	neighbors.push_back(tempVector[i]);
+	  neighbors.push_back(tempVector[i]);
 	}
     }
 
