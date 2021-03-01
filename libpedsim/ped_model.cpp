@@ -62,7 +62,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
 	    }
 	}
     }
-
   int nr_agents = agents.size();
   nr_agents += (nr_agents % 4);
   this->agentX.resize(nr_agents);
@@ -213,155 +212,107 @@ void Ped::Model::tick()
 	  {
 #pragma omp task
 	    {
-	      for (int i = 0; i < agentsSW.size(); i++)
+	      for (int i = 0; i < this->agentsSW.size(); i++)
 		{
-		  if ((agentsSW[i]->getX() > 78 and
-		       agentsSW[i]->getX() < 82) or
-		      (agentsSW[i]->getY() > 58 and
-		       agentsSW[i]->getY() < 62))
+			if(checkDesired(agentsSW[i]))
 		    {
-		      tempSW.push_back(agentsSW[i]);
-		      agentsSW.erase(agentsSW.begin() + i);
+		      this->tempSW.push_back(this->agentsSW[i]);
+		      this->agentsSW.erase(this->agentsSW.begin() + i);
 		      i--;
 		    }
 		  else 
 		    {
-		      agentsSW[i]->computeNextDesiredPosition();
-		      move(agentsSW[i]);
+		      this->agentsSW[i]->computeNextDesiredPosition();
+		      move(this->agentsSW[i]);
 		    }
 		}
 	    }
 #pragma omp task
 	    {
-	      for (int i = 0; i < agentsNW.size(); i++)
+	      for (int i = 0; i < this->agentsNW.size(); i++)
 		{
-		  if ((agentsNW[i]->getX() > 78 and
-		       agentsNW[i]->getX() < 82) or
-		      (agentsNW[i]->getY() > 58 and
-		       agentsNW[i]->getY() < 62))
-		    {
-		      tempNW.push_back(agentsNW[i]);
-		      agentsNW.erase(agentsNW.begin() + i);
+		    if(checkDesired(agentsNW[i]))
+			{
+		      this->tempNW.push_back(this->agentsNW[i]);
+		      this->agentsNW.erase(this->agentsNW.begin() + i);
 		      i--;
 		    }
 		  else 
 		    {
-		      agentsNW[i]->computeNextDesiredPosition();
-		      move(agentsNW[i]);
+		      this->agentsNW[i]->computeNextDesiredPosition();
+		      move(this->agentsNW[i]);
 		    }
 		}
 	    }
 #pragma omp task
 	    {
-	      for (int i = 0; i < agentsSE.size(); i++)
+	      for (int i = 0; i < this->agentsSE.size(); i++)
 		{
-		  if ((agentsSE[i]->getX() > 78 and
-		       agentsSE[i]->getX() < 82) or
-		      (agentsSE[i]->getY() > 58 and
-		       agentsSE[i]->getY() < 62))
-		    {
-		      tempSE.push_back(agentsSE[i]);
-		      agentsSE.erase(agentsSE.begin() + i);
+		    if(checkDesired(agentsSE[i]))
+			{
+		      this->tempSE.push_back(this->agentsSE[i]);
+		      this->agentsSE.erase(this->agentsSE.begin() + i);
 		      i--;
 		    }
 		  else 
 		    {
-		      agentsSE[i]->computeNextDesiredPosition();
-		      move(agentsSE[i]);
+		      this->agentsSE[i]->computeNextDesiredPosition();
+		      move(this->agentsSE[i]);
 		    }
 		}
 	    }
 #pragma omp task
 	    {
-	      for (int i = 0; i < agentsNE.size(); i++)
+	      for (int i = 0; i < this->agentsNE.size(); i++)
 		{
-		  if ((agentsNE[i]->getX() > 78 and
-		       agentsNE[i]->getX() < 82) or
-		      (agentsNE[i]->getY() > 58 and
-		       agentsNE[i]->getY() < 62))
-		    {
-		      tempNE.push_back(agentsNE[i]);
-		      agentsNE.erase(agentsNE.begin() + i);
+		    if(checkDesired(agentsNE[i]))
+			{
+		      this->tempNE.push_back(this->agentsNE[i]);
+		      this->agentsNE.erase(this->agentsNE.begin() + i);
 		      i--;
 		    }
 		  else 
 		    {
-		      agentsNE[i]->computeNextDesiredPosition();
-		      move(agentsNE[i]);
+		      this->agentsNE[i]->computeNextDesiredPosition();
+		      move(this->agentsNE[i]);
 		    }
 		}
 	    }
 	  }
 #pragma omp taskwait
+
 	}
+	int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
 
-	//std::cout << "AgentsSW: " << agentsSW.size() << "\n";
-	//std::cout << "AgentsNW: " << agentsNW.size() << "\n";
-	//std::cout << "AgentsSE: " << agentsSE.size() << "\n";
-	//std::cout << "AgentsNE: " << agentsNE.size() << "\n";
-	//std::cout << "tempSE: " << tempSE.size() << "\n";
-	//std::cout << "tempNE: " << tempNE.size() << "\n";
-	//std::cout << "tempSW: " << tempSW.size() << "\n";
-	//std::cout << "tempNW: " << tempNW.size() << "\n";
+	for(int i=0; i < largestArray; i++)
+	{
+		if(i < this->tempSW.size())
+		{
+			computeAndMove(this->tempSW[i]);
+		}
 	
-	std::cout << "total: " << agentsSW.size()+agentsNW.size()+agentsSE.size()+agentsNE.size()+tempSE.size()+tempNW.size()+tempSW.size()+tempNE.size() << "\n";
+		if(i < this->tempNW.size())
+		{
+			computeAndMove(this->tempNW[i]);
+		}
+		
+		if(i < this->tempSE.size())
+		{
+			computeAndMove(this->tempSE[i]);
+		}
+		
+		if(i < this->tempNE.size())
+		{
+			computeAndMove(this->tempNE[i]);
+		}
 
-	for (int i = 0; i < (tempSW.size() + tempNW.size() + tempSE.size() + tempNE.size()); i++)
-	  {
-	    //std::cout << "i: " << i << "\n";
- 	    Ped::Tagent *agent;
-	    if (i < tempSW.size())
-	      {
-		//std::cout << "SW:";
-		agent = tempSW[i];
-	      }
-	    else if (i < tempSW.size() + tempNW.size())
-	      {
-		//std::cout << "NW:";
-		agent = tempNW[i - tempSW.size()];
-	      }
-	    else if (i < tempSW.size() + tempNW.size() + tempSE.size())
-	      {
-		//std::cout << "SE:";
-		agent = tempSE[i - tempSW.size() - tempNW.size()];
-	      }
-	    else
-	      {
-		//std::cout << "NE:";
-		agent = tempNE[i - tempSW.size() - tempNW.size() - tempSE.size()];
-	      }
-	    
-	    agent->computeNextDesiredPosition();
-	    move(agent);
-	    if (agent->getX() < 80)
-	      {
-		if (agent->getY() < 60)
-		  {
-		    agentsNW.push_back(agent);
-		  }
-		else
-		  {
-		    agentsSW.push_back(agent);
-		  }
-	      }
-	    else
-	      {
-		if (agent->getY() > 60)
-		  {
-		    agentsNE.push_back(agent);
-		  }
-		else
-		  {
-		    agentsSE.push_back(agent);
-		  }
-	      }
-	  }
-	tempSE.clear();
-	tempNE.clear();
-	tempSW.clear();
-	tempNW.clear();
-      }
+	}
+	this->tempSE.clear();
+	this->tempNE.clear();
+	this->tempSW.clear();
+	this->tempNW.clear();
     }
+}
 }
 
 ////////////
@@ -369,32 +320,58 @@ void Ped::Model::tick()
 /// Don't use this for Assignment 1!
 ///////////////////////////////////////////////
 
-void Ped::Model::moveAgentToArray(Ped::Tagent *agent, char *section)
+void Ped::Model::computeAndMove(Ped::Tagent *agent)
 {
-  /*
-  if (agent->getX() < 80)
-    {
-      if (agent->getY() < 60 && section != "NW")
+	agent->computeNextDesiredPosition();
+	move(agent);
+	moveAgentToArray(agent);
+}
+
+bool Ped::Model::checkDesired(Ped::Tagent *agent)
+{
+	if((agent->getDesiredX() > 78 and
+    agent->getDesiredX() < 82) or
+    (agent->getDesiredY() > 58 and
+    agent->getDesiredY() < 62))
 	{
-	  this->tempNW.push_back(std::move(agent));
+		return true;
 	}
-      else if (agent->getY() > 60 && section != "SW")
+	else
 	{
-	  this->tempSW.push_back(std::move(agent));
+		return false;
 	}
-    }
-  else
-    {
-      if (agent->getY() < 60 && section != "NE")
+}
+
+void Ped::Model::moveAgentToArray(Ped::Tagent *agent)
+{
+
+	if (agent->getX() < 80)
 	{
-	  this->tempNE.push_back(std::move(agent));
+		if (agent->getY() < 60)
+		{
+			agentsNW.push_back(std::move(agent));
+		}
+		else
+		{
+			agentsSW.push_back(std::move(agent));
+		}
 	}
-      else if (agent->getY() > 60 && section != "SE")
+	else if (agent->getX() >= 80)
 	{
-	  this->tempSE.push_back(std::move(agent));
+		if (agent->getY() < 60)
+		{
+			agentsNE.push_back(std::move(agent));
+		}
+		else
+		{
+			agentsSE.push_back(std::move(agent));
+		}
 	}
-    }
-  */
+	else
+	{
+		printf("Somethings wrong!\n");
+	}
+
 }
 
 // Moves the agent to the next desired position. If already taken, it will
@@ -476,7 +453,7 @@ set<const Ped::Tagent *> Ped::Model::getNeighbors(int x, int y, int dist) const
 	  aY > (y - dist) and
 	  (aX != x or aY != y))
 	{
-	  neighbors.push_back(agents[i]);
+	  	neighbors.push_back(agents[i]);
 	}
     }
   // create the output list

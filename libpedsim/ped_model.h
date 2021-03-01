@@ -54,7 +54,11 @@ namespace Ped{
 	  void placeAgent(const Ped::Tagent *a);
 	  
 	  // Moves an agent to the right array if they've crossed.
-	  void moveAgentToArray(Ped::Tagent *agent, char *section);
+	  void moveAgentToArray(Ped::Tagent *agent);
+
+	  void computeAndMove(Ped::Tagent *agents);
+
+	  bool checkDesired(Ped::Tagent *agent);
 
 	  // Cleans up the tree and restructures it. Worth calling every now and then.
 	  void cleanup();
@@ -89,6 +93,7 @@ namespace Ped{
 
 		// Moves an agent towards its next position
 		void move(Ped::Tagent *agent);
+		void moveSEQ(Ped::Tagent *agent);
 		
 		
 		////////////
