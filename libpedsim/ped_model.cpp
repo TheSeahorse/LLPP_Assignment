@@ -103,7 +103,6 @@ void Ped::Model::tick()
     {
     case SEQ:
       {
-	// printf("Running SEQ\n");
 	std::vector<Tagent *> tempAgent;
 	for (int i = 0; i < agents.size(); i++)
 	  {
@@ -215,7 +214,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSW.size(); i++)
 		{
-			this->agentsSW[i]->computeNextDesiredPosition();
+		  this->agentsSW[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsSW[i]))
 		    {
 		      this->tempSW.push_back(this->agentsSW[i]);
@@ -232,7 +231,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNW.size(); i++)
 		{
-			this->agentsNW[i]->computeNextDesiredPosition();
+		  this->agentsNW[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsNW[i]))
 		    {
 		      this->tempNW.push_back(this->agentsNW[i]);
@@ -249,7 +248,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSE.size(); i++)
 		{
-			this->agentsSE[i]->computeNextDesiredPosition();
+		  this->agentsSE[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsSE[i]))
 		    {
 		      this->tempSE.push_back(this->agentsSE[i]);
@@ -266,7 +265,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNE.size(); i++)
 		{
-			this->agentsNE[i]->computeNextDesiredPosition();
+		  this->agentsNE[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsNE[i]))
 		    {
 		      this->tempNE.push_back(this->agentsNE[i]);
