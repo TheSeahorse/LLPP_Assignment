@@ -50,9 +50,8 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
       this->destX[i] = agents[i]->destination->getx();
       this->destY[i] = agents[i]->destination->gety();
       this->destR[i] = agents[i]->destination->getr();
-	  this->reachedDest[i] = (float)0;
+      this->reachedDest[i] = (float)0;
     }
-	printf("wtf\n");
   // Sets the chosen implemenation. Standard in the given code is SEQ
   this->implementation = implementation;
 	
@@ -76,7 +75,7 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent*> agents)
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 8; //change this variable to chose number of threads we run on
+  int num_threads = 4; //change this variable to chose number of threads we run on
 
   std::vector<Tagent*> agents = getAgents();
   switch(this->implementation){
@@ -134,16 +133,17 @@ void Ped::Model::tick()
     }
   case VECTOR:
     {
-    omp_set_num_threads(num_threads);
-	bool update = false;
-	#pragma omp parallel for
-    for (int i = 0; i < agents.size(); i++)
+      
+      bool update = false;
+      //omp_set_num_threads(num_threads);
+      //#pragma omp parallel for
+
+      for (int i = 0; i < agents.size(); i++)
 	{
 	  agents[i]->setX((int)round(this->agentX[i]));
 	  agents[i]->setY((int)round(this->agentY[i]));
 
 	}
-
 
       for (int i = 0; i < agents.size(); i += 4)
 	{
@@ -165,6 +165,7 @@ void Ped::Model::tick()
 	  	this->newDestBool = _mm_cmplt_ps(this->len, this->r);
 
 	  	_mm_store_ps(&this->reachedDest[i], this->newDestBool);
+
 		for(int j = i; j < i+4; j++)
 		{
 			if (this->reachedDest[j] != 0)
@@ -200,10 +201,6 @@ void Ped::Model::tick()
 	  	_mm_store_ps(&this->agentX[i], this->desPosX);
 	  	_mm_store_ps(&this->agentY[i], this->desPosY);
 	}
-
-
-
-
     }
     break;
   }
