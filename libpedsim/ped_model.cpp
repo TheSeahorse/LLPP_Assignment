@@ -31,10 +31,13 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   
   // Set up destinations
   destinations = std::vector<Ped::Twaypoint*>(destinationsInScenario.begin(), destinationsInScenario.end());
+
+  // Calculating vector_size
   int vector_size = agents.size();
   int rest = vector_size % 4;
   vector_size = vector_size + rest;
 
+  // Resizing the vectors
   this->agentX.resize(vector_size); 
   this->agentY.resize(vector_size);
   this->destX.resize(vector_size);
@@ -42,6 +45,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent*> agentsInScenario, std::vector<T
   this->destR.resize(vector_size);
   this->reachedDest.resize(vector_size);
 
+  // Populating the vectors
   for (int i = 0; i < agents.size(); i++)
     {
       agents[i]->getStartDestination();
@@ -138,12 +142,7 @@ void Ped::Model::tick()
       //omp_set_num_threads(num_threads);
       //#pragma omp parallel for
 
-      for (int i = 0; i < agents.size(); i++)
-	{
-	  agents[i]->setX((int)round(this->agentX[i]));
-	  agents[i]->setY((int)round(this->agentY[i]));
-
-	}
+      
 
       for (int i = 0; i < agents.size(); i += 4)
 	{
@@ -190,6 +189,7 @@ void Ped::Model::tick()
 
 	  	this->sumSqr = _mm_add_ps(this->sqrX, this->sqrY);
 	  	this->len = _mm_sqrt_ps(this->sumSqr);
+		update = false;
 		}
 
 	 	this->desPosX = _mm_div_ps(this->diffX, this->len);
@@ -200,6 +200,12 @@ void Ped::Model::tick()
 
 	  	_mm_store_ps(&this->agentX[i], this->desPosX);
 	  	_mm_store_ps(&this->agentY[i], this->desPosY);
+
+		for (int i = 0; i < agents.size(); i++)
+		  {
+		    agents[i]->setX((int)round(this->agentX[i]));
+		    agents[i]->setY((int)round(this->agentY[i]));
+		  }
 	}
     }
     break;
