@@ -139,10 +139,6 @@ void Ped::Model::tick()
     {
       
       bool update = false;
-      //omp_set_num_threads(num_threads);
-      //#pragma omp parallel for
-
-      
 
       for (int i = 0; i < agents.size(); i += 4)
 	{
@@ -201,6 +197,8 @@ void Ped::Model::tick()
 	  	_mm_store_ps(&this->agentX[i], this->desPosX);
 	  	_mm_store_ps(&this->agentY[i], this->desPosY);
 
+		//omp_set_num_threads(num_threads);
+		//#pragma omp parallel for
 		for (int i = 0; i < agents.size(); i++)
 		  {
 		    agents[i]->setX((int)round(this->agentX[i]));
