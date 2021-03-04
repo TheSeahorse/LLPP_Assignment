@@ -215,6 +215,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSW.size(); i++)
 		{
+			this->agentsSW[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsSW[i]))
 		    {
 		      this->tempSW.push_back(this->agentsSW[i]);
@@ -223,7 +224,6 @@ void Ped::Model::tick()
 		    }
 		  else 
 		    {
-		      this->agentsSW[i]->computeNextDesiredPosition();
 		      move(this->agentsSW[i], this->agentsSW, this->tempSW);
 		    }
 		}
@@ -232,6 +232,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNW.size(); i++)
 		{
+			this->agentsNW[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsNW[i]))
 		    {
 		      this->tempNW.push_back(this->agentsNW[i]);
@@ -240,7 +241,6 @@ void Ped::Model::tick()
 		    }
 		  else 
 		    {
-		      this->agentsNW[i]->computeNextDesiredPosition();
 		      move(this->agentsNW[i], this->agentsNW, this->tempNW);
 		    }
 		}
@@ -249,6 +249,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsSE.size(); i++)
 		{
+			this->agentsSE[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsSE[i]))
 		    {
 		      this->tempSE.push_back(this->agentsSE[i]);
@@ -257,7 +258,6 @@ void Ped::Model::tick()
 		    }
 		  else 
 		    {
-		      this->agentsSE[i]->computeNextDesiredPosition();
 		      move(this->agentsSE[i], this->agentsSE, this->tempSE);
 		    }
 		}
@@ -266,6 +266,7 @@ void Ped::Model::tick()
 	    {
 	      for (int i = 0; i < this->agentsNE.size(); i++)
 		{
+			this->agentsNE[i]->computeNextDesiredPosition();
 		  if(checkPosition(agentsNE[i]))
 		    {
 		      this->tempNE.push_back(this->agentsNE[i]);
@@ -274,7 +275,6 @@ void Ped::Model::tick()
 		    }
 		  else 
 		    {
-		      this->agentsNE[i]->computeNextDesiredPosition();
 		      move(this->agentsNE[i], this->agentsNE, this->tempNE);
 		    }
 		}
@@ -320,8 +320,6 @@ void Ped::Model::tick()
 	this->tempNE.clear();
 	this->tempSW.clear();
 	this->tempNW.clear();
-	//int sum = agentsSW.size() + agentsNW.size() + agentsSE.size() + agentsNE.size();
-	//std::cout << "Agents: " << sum << "\n";
       }
     }
 }
@@ -333,17 +331,16 @@ void Ped::Model::tick()
 
 void Ped::Model::computeAndMove(Ped::Tagent *agent, std::vector<Ped::Tagent *> agentVector, std::vector<Ped::Tagent *> allTemps)
 {
-  agent->computeNextDesiredPosition();
   move(agent, agentVector, allTemps);
   moveAgentToArray(agent);
 }
 
 bool Ped::Model::checkPosition(Ped::Tagent *agent)
 {
-  if((agent->getX() >= 78 and
-      agent->getX() <= 82) or
-     (agent->getY() >= 58 and
-      agent->getY() <= 62))
+  if((agent->getDesiredX() >= 78 and
+      agent->getDesiredX() < 82) or
+     (agent->getDesiredY() >= 58 and
+      agent->getDesiredY() < 62))
     {
       return true;
     }
