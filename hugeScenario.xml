@@ -10,31 +10,31 @@
 
   <!-- conveniently divisible by 8 -->
   <!-- agents -->
-  <agent x="40" y="60" n="160" dx="30" dy="30">
+  <agent x="40" y="60" n="8" dx="30" dy="30">
     <addwaypoint id="w1" />
     <addwaypoint id="w3" />
     <addwaypoint id="w2" />
     <addwaypoint id="w4" />
   </agent>
 
-  <agent x="160" y="60" n="160" dx="50" dy="30">
+  <agent x="160" y="60" n="8" dx="50" dy="30">
     <addwaypoint id="w2" />
     <addwaypoint id="w4" />
     <addwaypoint id="w1" />
     <addwaypoint id="w3" />
   </agent>
 
-  <agent x="20" y="20" n="160" dx="20" dy="20">
+  <agent x="20" y="20" n="8" dx="20" dy="20">
     <addwaypoint id="w6" />
     <addwaypoint id="w5" />
   </agent>
 
-  <agent x="140" y="100" n="160" dx="20" dy="20">
+  <agent x="140" y="100" n="8" dx="20" dy="20">
     <addwaypoint id="w5" />
     <addwaypoint id="w6" />
   </agent>
 
-  <agent x="80" y="20" n="160" dx="30" dy="30">
+  <agent x="80" y="20" n="8" dx="30" dy="30">
     <addwaypoint id="w4" />
     <addwaypoint id="w5" />
     <addwaypoint id="w1" />
@@ -43,7 +43,7 @@
     <addwaypoint id="w2" />
   </agent>
 
-  <agent x="80" y="100" n="160" dx="30" dy="30">
+  <agent x="80" y="100" n="8" dx="30" dy="30">
     <addwaypoint id="w2" />
     <addwaypoint id="w6" />
     <addwaypoint id="w3" />

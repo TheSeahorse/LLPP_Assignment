@@ -53,6 +53,8 @@ namespace Ped{
 	  // Adds an agent to the tree structure
 	  void placeAgent(const Ped::Tagent *a);
 	  
+	  void tickTaskBased(int num_threads);
+
 	  // Moves an agent to the right array if they've crossed.
 	  void moveAgentToArray(Ped::Tagent *agent);
 

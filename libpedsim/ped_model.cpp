@@ -157,12 +157,8 @@ void Ped::Model::tick()
       }
     case CUDA:
       {
-		  for(int i = 0; i < agents.size(); i++){
-			agents[i]->computeNextDesiredPosition();
-			agents[i]->setX(agents[i]->getDesiredX());
-      		agents[i]->setY(agents[i]->getDesiredY());
-		  }
-		  updateHeatmapSeq();
+        tickTaskBased(num_threads);
+	updateHeatmapSeq();
 	break;
       }
     case VECTOR:
@@ -211,123 +207,131 @@ void Ped::Model::tick()
       }
     case TASK:
       {
-        omp_set_num_threads(num_threads);
-#pragma omp parallel
-	{
-#pragma omp single nowait
-	  {
-#pragma omp task
-	    {
-	      for (int i = 0; i < this->agentsSW.size(); i++)
-		{
-		  this->agentsSW[i]->computeNextDesiredPosition();
-		  if(checkPosition(agentsSW[i]))
-		    {
-		      this->tempSW.push_back(this->agentsSW[i]);
-		      this->agentsSW.erase(this->agentsSW.begin() + i);
-		      i--;
-		    }
-		  else 
-		    {
-		      move(this->agentsSW[i], this->agentsSW, this->tempSW);
-		    }
-		}
-	    }
-#pragma omp task
-	    {
-	      for (int i = 0; i < this->agentsNW.size(); i++)
-		{
-		  this->agentsNW[i]->computeNextDesiredPosition();
-		  if(checkPosition(agentsNW[i]))
-		    {
-		      this->tempNW.push_back(this->agentsNW[i]);
-		      this->agentsNW.erase(this->agentsNW.begin() + i);
-		      i--;
-		    }
-		  else 
-		    {
-		      move(this->agentsNW[i], this->agentsNW, this->tempNW);
-		    }
-		}
-	    }
-#pragma omp task
-	    {
-	      for (int i = 0; i < this->agentsSE.size(); i++)
-		{
-		  this->agentsSE[i]->computeNextDesiredPosition();
-		  if(checkPosition(agentsSE[i]))
-		    {
-		      this->tempSE.push_back(this->agentsSE[i]);
-		      this->agentsSE.erase(this->agentsSE.begin() + i);
-		      i--;
-		    }
-		  else 
-		    {
-		      move(this->agentsSE[i], this->agentsSE, this->tempSE);
-		    }
-		}
-	    }
-#pragma omp task
-	    {
-	      for (int i = 0; i < this->agentsNE.size(); i++)
-		{
-		  this->agentsNE[i]->computeNextDesiredPosition();
-		  if(checkPosition(agentsNE[i]))
-		    {
-		      this->tempNE.push_back(this->agentsNE[i]);
-		      this->agentsNE.erase(this->agentsNE.begin() + i);
-		      i--;
-		    }
-		  else 
-		    {
-		      move(this->agentsNE[i], this->agentsNE, this->tempNE);
-		    }
-		}
-	    }
-	  }
-#pragma omp taskwait
-
-	}
-	int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
-
-	std::vector<Ped::Tagent *> allTemps;
-	allTemps.insert(allTemps.end(), this->tempSE.begin(), this->tempSE.end());
-	allTemps.insert(allTemps.end(), this->tempNE.begin(), this->tempNE.end());
-	allTemps.insert(allTemps.end(), this->tempSW.begin(), this->tempSW.end());
-	allTemps.insert(allTemps.end(), this->tempNW.begin(), this->tempNW.end());
-
-	for(int i=0; i < largestArray; i++)
-	  {
-
-	    if(i < this->tempSW.size())
-	      {
-		computeAndMove(this->tempSW[i], this->agentsSW, allTemps);
-	      }
-	
-	    if(i < this->tempNW.size())
-	      {
-		computeAndMove(this->tempNW[i], this->agentsNW, allTemps);
-	      }
-		
-	    if(i < this->tempSE.size())
-	      {
-		computeAndMove(this->tempSE[i], this->agentsSE, allTemps);
-	      }
-		
-	    if(i < this->tempNE.size())
-	      {
-		computeAndMove(this->tempNE[i], this->agentsNE, allTemps);
-	      }
-
-	  }
-
-	this->tempSE.clear();
-	this->tempNE.clear();
-	this->tempSW.clear();
-	this->tempNW.clear();
+	tickTaskBased(num_threads);
       }
     }
 }
+
+
+void Ped::Model::tickTaskBased(int num_threads)
+{
+  omp_set_num_threads(num_threads);
+#pragma omp parallel
+  {
+#pragma omp single nowait
+    {
+#pragma omp task
+      {
+	for (int i = 0; i < this->agentsSW.size(); i++)
+	  {
+	    this->agentsSW[i]->computeNextDesiredPosition();
+	    if(checkPosition(agentsSW[i]))
+	      {
+		this->tempSW.push_back(this->agentsSW[i]);
+		this->agentsSW.erase(this->agentsSW.begin() + i);
+		i--;
+	      }
+	    else 
+	      {
+		move(this->agentsSW[i], this->agentsSW, this->tempSW);
+	      }
+	  }
+      }
+#pragma omp task
+      {
+	for (int i = 0; i < this->agentsNW.size(); i++)
+	  {
+	    this->agentsNW[i]->computeNextDesiredPosition();
+	    if(checkPosition(agentsNW[i]))
+	      {
+		this->tempNW.push_back(this->agentsNW[i]);
+		this->agentsNW.erase(this->agentsNW.begin() + i);
+		i--;
+	      }
+	    else 
+	      {
+		move(this->agentsNW[i], this->agentsNW, this->tempNW);
+	      }
+	  }
+      }
+#pragma omp task
+      {
+	for (int i = 0; i < this->agentsSE.size(); i++)
+	  {
+	    this->agentsSE[i]->computeNextDesiredPosition();
+	    if(checkPosition(agentsSE[i]))
+	      {
+		this->tempSE.push_back(this->agentsSE[i]);
+		this->agentsSE.erase(this->agentsSE.begin() + i);
+		i--;
+	      }
+	    else 
+	      {
+		move(this->agentsSE[i], this->agentsSE, this->tempSE);
+	      }
+	  }
+      }
+#pragma omp task
+      {
+	for (int i = 0; i < this->agentsNE.size(); i++)
+	  {
+	    this->agentsNE[i]->computeNextDesiredPosition();
+	    if(checkPosition(agentsNE[i]))
+	      {
+		this->tempNE.push_back(this->agentsNE[i]);
+		this->agentsNE.erase(this->agentsNE.begin() + i);
+		i--;
+	      }
+	    else 
+	      {
+		move(this->agentsNE[i], this->agentsNE, this->tempNE);
+	      }
+	  }
+      }
+    }
+#pragma omp taskwait
+
+  }
+  int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
+
+  std::vector<Ped::Tagent *> allTemps;
+  allTemps.insert(allTemps.end(), this->tempSE.begin(), this->tempSE.end());
+  allTemps.insert(allTemps.end(), this->tempNE.begin(), this->tempNE.end());
+  allTemps.insert(allTemps.end(), this->tempSW.begin(), this->tempSW.end());
+  allTemps.insert(allTemps.end(), this->tempNW.begin(), this->tempNW.end());
+
+  for(int i=0; i < largestArray; i++)
+    {
+
+      if(i < this->tempSW.size())
+	{
+	  computeAndMove(this->tempSW[i], this->agentsSW, allTemps);
+	}
+	
+      if(i < this->tempNW.size())
+	{
+	  computeAndMove(this->tempNW[i], this->agentsNW, allTemps);
+	}
+		
+      if(i < this->tempSE.size())
+	{
+	  computeAndMove(this->tempSE[i], this->agentsSE, allTemps);
+	}
+		
+      if(i < this->tempNE.size())
+	{
+	  computeAndMove(this->tempNE[i], this->agentsNE, allTemps);
+	}
+
+    }
+
+  this->tempSE.clear();
+  this->tempNE.clear();
+  this->tempSW.clear();
+  this->tempNW.clear();    
+}
+  
+
 
 ////////////
 /// Everything below here relevant for Assignment 3.
