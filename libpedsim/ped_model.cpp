@@ -157,6 +157,12 @@ void Ped::Model::tick()
       }
     case CUDA:
       {
+		  for(int i = 0; i < agents.size(); i++){
+			agents[i]->computeNextDesiredPosition();
+			agents[i]->setX(agents[i]->getDesiredX());
+      		agents[i]->setY(agents[i]->getDesiredY());
+		  }
+		  updateHeatmapSeq();
 	break;
       }
     case VECTOR:
