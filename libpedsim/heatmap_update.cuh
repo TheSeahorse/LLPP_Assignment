@@ -1,0 +1,4 @@
+void updateHeatFade(int *heatmap, int size);
+void updateHeatIntensity(int *heatmap, int size);
+void updateSetMaxHeat(int *heatmap, int size);
+void updateScaledHeatmap(int *heatmap, int *scaledHeatmap, int size, int cellSize);

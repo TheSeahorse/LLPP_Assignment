@@ -7,7 +7,6 @@
 //
 #include "ped_model.h"
 #include "ped_waypoint.h"
-#include "ped_model.h"
 #include <iostream>
 #include <stack>
 #include <algorithm>
@@ -17,6 +16,7 @@
 #include <math.h>
 #include <cstdio>
 #include <utility>
+#include "cuda.h"
 
 #include <stdlib.h>
 
@@ -158,7 +158,7 @@ void Ped::Model::tick()
     case CUDA:
       {
         tickTaskBased(num_threads);
-	updateHeatmapSeq();
+		updateHeatmapSeq();
 	break;
       }
     case VECTOR:
@@ -271,8 +271,7 @@ void Ped::Model::tickTaskBased(int num_threads)
 	      }
 	  }
       }
-#pragma omp task
-      {
+
 	for (int i = 0; i < this->agentsNE.size(); i++)
 	  {
 	    this->agentsNE[i]->computeNextDesiredPosition();
@@ -286,7 +285,6 @@ void Ped::Model::tickTaskBased(int num_threads)
 	      {
 		move(this->agentsNE[i], this->agentsNE, this->tempNE);
 	      }
-	  }
       }
     }
 #pragma omp taskwait

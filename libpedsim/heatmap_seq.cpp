@@ -3,10 +3,15 @@
 // Implements the heatmap functionality. 
 //
 #include "ped_model.h"
-
+#include "cuda_runtime.h"
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+#include "device_launch_parameters.h"
 #include <cstdlib>
 #include <iostream>
 #include <cmath>
+#include <omp.h>
+#include "heatmap_update.cuh"
 using namespace std;
 
 // Memory leak check with msvc++
@@ -15,21 +20,28 @@ using namespace std;
 // Sets up the heatmap
 void Ped::Model::setupHeatmapSeq()
 {
-	int *hm = (int*)calloc(SIZE*SIZE, sizeof(int));
-	int *shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
-	int *bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+	hm = (int*)calloc(SIZE*SIZE, sizeof(int));
+	shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+	bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
 
 	heatmap = (int**)malloc(SIZE*sizeof(int*));
 
 	scaled_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 	blurred_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 
-	for (int i = 0; i < SIZE; i++)
-	{
-		heatmap[i] = hm + SIZE*i;
-	}
+	// #pragma omp parallel for
+	// for (int i = 0; i < SIZE; i++)
+	// {
+	// 	heatmap[i] = hm + SIZE*i;
+	// }
+
+	#pragma omp parallel for
 	for (int i = 0; i < SCALED_SIZE; i++)
 	{
+		if(i < SIZE)
+		{
+			heatmap[i] = hm + SIZE*i;
+		}
 		scaled_heatmap[i] = shm + SCALED_SIZE*i;
 		blurred_heatmap[i] = bhm + SCALED_SIZE*i;
 	}
@@ -38,30 +50,46 @@ void Ped::Model::setupHeatmapSeq()
 // Updates the heatmap according to the agent positions
 void Ped::Model::updateHeatmapSeq()
 {
-	for (int x = 0; x < SIZE; x++)
-	{
-		for (int y = 0; y < SIZE; y++)
-		{
-			// heat fades
-			heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
-		}
-	}
+
+
+	updateHeatFade(hm, SIZE);
+	cudaDeviceSynchronize();
+	// updateHeatIntensity(hm, SIZE);
+	// cudaDeviceSynchronize();
+	// updateSetMaxHeat(hm, SIZE);
+	// cudaDeviceSynchronize();
+
+
+	// updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
+	// cudaDeviceSynchronize();
+	// for (int x = 0; x < SIZE; x++)
+	// {
+	// 	for (int y = 0; y < SIZE; y++)
+	// 	{
+	// 		// heat fades
+	// 		heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
+	// 	}
+	// }
+	// std::cout << "heatmap[512][512]:" << heatmap[512][512] << "\n";
 
 	// Count how many agents want to go to each location
+	int x[agents.size()];
+	int y[agents.size()];
 	for (int i = 0; i < agents.size(); i++)
 	{
 		Ped::Tagent* agent = agents[i];
-		int x = agent->getDesiredX();
-		int y = agent->getDesiredY();
+		x[i] = agent->getDesiredX();
+		y[i] = agent->getDesiredY();
 
-		if (x < 0 || x >= SIZE || y < 0 || y >= SIZE)
+		if (x[i] < 0 || x[i] >= SIZE || y[i] < 0 || y[i] >= SIZE)
 		{
 			continue;
 		}
 
-		// intensify heat for better color results
-		heatmap[y][x] += 40;
-
+		else// intensify heat for better color results
+		{
+			heatmap[y[i]][x[i]] += 40;
+		}
 	}
 
 	for (int x = 0; x < SIZE; x++)
@@ -72,7 +100,7 @@ void Ped::Model::updateHeatmapSeq()
 		}
 	}
 
-	// Scale the data for visual representation
+// 	// Scale the data for visual representation
 	for (int y = 0; y < SIZE; y++)
 	{
 		for (int x = 0; x < SIZE; x++)
