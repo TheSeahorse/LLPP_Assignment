@@ -102,8 +102,8 @@ void Ped::Model::updateHeatmapSeq()
     }
   */
 
-  // updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
-  // cudaDeviceSynchronize();
+  updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
+  cudaDeviceSynchronize();
 
   
   
@@ -111,20 +111,20 @@ void Ped::Model::updateHeatmapSeq()
   
 
   // 	// Scale the data for visual representation
-  for (int y = 0; y < SIZE; y++)
-    {
-      for (int x = 0; x < SIZE; x++)
-	{
-	  int value = heatmap[y][x];
-	  for (int cellY = 0; cellY < CELLSIZE; cellY++)
-	    {
-	      for (int cellX = 0; cellX < CELLSIZE; cellX++)
-		{
-		  scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
-		}
-	    }
-	}
-    }
+  // for (int y = 0; y < SIZE; y++)
+  //   {
+  //     for (int x = 0; x < SIZE; x++)
+	// {
+	//   int value = heatmap[y][x];
+	//   for (int cellY = 0; cellY < CELLSIZE; cellY++)
+	//     {
+	//       for (int cellX = 0; cellX < CELLSIZE; cellX++)
+	// 	{
+	// 	  scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
+	// 	}
+	//     }
+	// }
+  //   }
 
   // Weights for blur filter
   const int w[5][5] = {
@@ -140,18 +140,18 @@ void Ped::Model::updateHeatmapSeq()
   for (int i = 2; i < SCALED_SIZE - 2; i++)
     {
       for (int j = 2; j < SCALED_SIZE - 2; j++)
-	{
-	  int sum = 0;
-	  for (int k = -2; k < 3; k++)
-	    {
-	      for (int l = -2; l < 3; l++)
-		{
-		  sum += w[2 + k][2 + l] * scaled_heatmap[i + k][j + l];
-		}
-	    }
-	  int value = sum / WEIGHTSUM;
-	  blurred_heatmap[i][j] = 0x00FF0000 | value << 24;
-	}
+      {
+        int sum = 0;
+        for (int k = -2; k < 3; k++)
+          {
+            for (int l = -2; l < 3; l++)
+            {
+              sum += w[2 + k][2 + l] * scaled_heatmap[i + k][j + l];
+            }
+          }
+        int value = sum / WEIGHTSUM;
+        blurred_heatmap[i][j] = 0x00FF0000 | value << 24;
+      }
     }
 }
 
