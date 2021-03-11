@@ -53,6 +53,18 @@ void Ped::Model::updateHeatmapSeq()
   updateHeatFade(hm, SIZE);
   cudaDeviceSynchronize();
 
+  // fadeHeat:
+  // for (int x = 0; x < SIZE; x++)
+  // {
+  // 	for (int y = 0; y < SIZE; y++)
+  // 	{
+  // 		// heat fades
+  // 		heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
+  // 	}
+  // }
+  // std::cout << "heatmap[512][512]:" << heatmap[512][512] << "\n";
+
+  // UpdateHeatIntensity
   int x[agents.size()];
   int y[agents.size()];
   for (int i = 0; i < agents.size(); i++)
@@ -60,8 +72,6 @@ void Ped::Model::updateHeatmapSeq()
       Ped::Tagent* agent = agents[i];
       x[i] = agent->getDesiredX();
       y[i] = agent->getDesiredY();
-      std::cout << "x: " << x[i] << "\n";
-      std::cout << "y: " << y[i] << "\n";
     }
   std::cout << "size: " << agents.size() << "\n";
   /*
@@ -78,26 +88,11 @@ void Ped::Model::updateHeatmapSeq()
   */
   updateHeatIntensity(hm, x, y, agents.size(), SIZE);
   cudaDeviceSynchronize();
-  // updateSetMaxHeat(hm, SIZE);
-  // cudaDeviceSynchronize();
-
-
-  // updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
-  // cudaDeviceSynchronize();
-  // for (int x = 0; x < SIZE; x++)
-  // {
-  // 	for (int y = 0; y < SIZE; y++)
-  // 	{
-  // 		// heat fades
-  // 		heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
-  // 	}
-  // }
-  // std::cout << "heatmap[512][512]:" << heatmap[512][512] << "\n";
-
-  // Count how many agents want to go to each location
   
-  
-  
+  updateSetMaxHeat(hm, SIZE);
+  cudaDeviceSynchronize();
+  // Setmaxheat
+  /*
   for (int x = 0; x < SIZE; x++)
     {
       for (int y = 0; y < SIZE; y++)
@@ -105,6 +100,15 @@ void Ped::Model::updateHeatmapSeq()
 	  heatmap[y][x] = heatmap[y][x] < 255 ? heatmap[y][x] : 255;
 	}
     }
+  */
+
+  // updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
+  // cudaDeviceSynchronize();
+
+  
+  
+  
+  
 
   // 	// Scale the data for visual representation
   for (int y = 0; y < SIZE; y++)
