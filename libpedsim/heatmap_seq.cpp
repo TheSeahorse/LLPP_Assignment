@@ -20,131 +20,137 @@ using namespace std;
 // Sets up the heatmap
 void Ped::Model::setupHeatmapSeq()
 {
-	hm = (int*)calloc(SIZE*SIZE, sizeof(int));
-	shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
-	bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+  hm = (int*)calloc(SIZE*SIZE, sizeof(int));
+  shm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
+  bhm = (int*)malloc(SCALED_SIZE*SCALED_SIZE*sizeof(int));
 
-	heatmap = (int**)malloc(SIZE*sizeof(int*));
+  heatmap = (int**)malloc(SIZE*sizeof(int*));
 
-	scaled_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
-	blurred_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
+  scaled_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
+  blurred_heatmap = (int**)malloc(SCALED_SIZE*sizeof(int*));
 
-	// #pragma omp parallel for
-	// for (int i = 0; i < SIZE; i++)
-	// {
-	// 	heatmap[i] = hm + SIZE*i;
-	// }
+  // #pragma omp parallel for
+  // for (int i = 0; i < SIZE; i++)
+  // {
+  // 	heatmap[i] = hm + SIZE*i;
+  // }
 
-	#pragma omp parallel for
-	for (int i = 0; i < SCALED_SIZE; i++)
+#pragma omp parallel for
+  for (int i = 0; i < SCALED_SIZE; i++)
+    {
+      if(i < SIZE)
 	{
-		if(i < SIZE)
-		{
-			heatmap[i] = hm + SIZE*i;
-		}
-		scaled_heatmap[i] = shm + SCALED_SIZE*i;
-		blurred_heatmap[i] = bhm + SCALED_SIZE*i;
+	  heatmap[i] = hm + SIZE*i;
 	}
+      scaled_heatmap[i] = shm + SCALED_SIZE*i;
+      blurred_heatmap[i] = bhm + SCALED_SIZE*i;
+    }
 }
 
 // Updates the heatmap according to the agent positions
 void Ped::Model::updateHeatmapSeq()
 {
+  updateHeatFade(hm, SIZE);
+  cudaDeviceSynchronize();
 
-
-	updateHeatFade(hm, SIZE);
-	cudaDeviceSynchronize();
-	// updateHeatIntensity(hm, SIZE);
-	// cudaDeviceSynchronize();
-	// updateSetMaxHeat(hm, SIZE);
-	// cudaDeviceSynchronize();
-
-
-	// updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
-	// cudaDeviceSynchronize();
-	// for (int x = 0; x < SIZE; x++)
-	// {
-	// 	for (int y = 0; y < SIZE; y++)
-	// 	{
-	// 		// heat fades
-	// 		heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
-	// 	}
-	// }
-	// std::cout << "heatmap[512][512]:" << heatmap[512][512] << "\n";
-
-	// Count how many agents want to go to each location
-	int x[agents.size()];
-	int y[agents.size()];
-	for (int i = 0; i < agents.size(); i++)
+  int x[agents.size()];
+  int y[agents.size()];
+  for (int i = 0; i < agents.size(); i++)
+    {
+      Ped::Tagent* agent = agents[i];
+      x[i] = agent->getDesiredX();
+      y[i] = agent->getDesiredY();
+      std::cout << "x: " << x[i] << "\n";
+      std::cout << "y: " << y[i] << "\n";
+    }
+  std::cout << "size: " << agents.size() << "\n";
+  /*
+      if (x[i] < 0 || x[i] >= SIZE || y[i] < 0 || y[i] >= SIZE)
 	{
-		Ped::Tagent* agent = agents[i];
-		x[i] = agent->getDesiredX();
-		y[i] = agent->getDesiredY();
-
-		if (x[i] < 0 || x[i] >= SIZE || y[i] < 0 || y[i] >= SIZE)
-		{
-			continue;
-		}
-
-		else// intensify heat for better color results
-		{
-			heatmap[y[i]][x[i]] += 40;
-		}
+	  continue;
 	}
 
-	for (int x = 0; x < SIZE; x++)
+      else// intensify heat for better color results
 	{
-		for (int y = 0; y < SIZE; y++)
-		{
-			heatmap[y][x] = heatmap[y][x] < 255 ? heatmap[y][x] : 255;
-		}
+	  heatmap[y[i]][x[i]] += 40;
 	}
+    }
+  */
+  updateHeatIntensity(hm, x, y, agents.size(), SIZE);
+  cudaDeviceSynchronize();
+  // updateSetMaxHeat(hm, SIZE);
+  // cudaDeviceSynchronize();
 
-// 	// Scale the data for visual representation
-	for (int y = 0; y < SIZE; y++)
+
+  // updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
+  // cudaDeviceSynchronize();
+  // for (int x = 0; x < SIZE; x++)
+  // {
+  // 	for (int y = 0; y < SIZE; y++)
+  // 	{
+  // 		// heat fades
+  // 		heatmap[y][x] = (int)round(heatmap[y][x] * 0.80);
+  // 	}
+  // }
+  // std::cout << "heatmap[512][512]:" << heatmap[512][512] << "\n";
+
+  // Count how many agents want to go to each location
+  
+  
+  
+  for (int x = 0; x < SIZE; x++)
+    {
+      for (int y = 0; y < SIZE; y++)
 	{
-		for (int x = 0; x < SIZE; x++)
-		{
-			int value = heatmap[y][x];
-			for (int cellY = 0; cellY < CELLSIZE; cellY++)
-			{
-				for (int cellX = 0; cellX < CELLSIZE; cellX++)
-				{
-					scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
-				}
-			}
-		}
+	  heatmap[y][x] = heatmap[y][x] < 255 ? heatmap[y][x] : 255;
 	}
+    }
 
-	// Weights for blur filter
-	const int w[5][5] = {
-		{ 1, 4, 7, 4, 1 },
-		{ 4, 16, 26, 16, 4 },
-		{ 7, 26, 41, 26, 7 },
-		{ 4, 16, 26, 16, 4 },
-		{ 1, 4, 7, 4, 1 }
-	};
+  // 	// Scale the data for visual representation
+  for (int y = 0; y < SIZE; y++)
+    {
+      for (int x = 0; x < SIZE; x++)
+	{
+	  int value = heatmap[y][x];
+	  for (int cellY = 0; cellY < CELLSIZE; cellY++)
+	    {
+	      for (int cellX = 0; cellX < CELLSIZE; cellX++)
+		{
+		  scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
+		}
+	    }
+	}
+    }
+
+  // Weights for blur filter
+  const int w[5][5] = {
+    { 1, 4, 7, 4, 1 },
+    { 4, 16, 26, 16, 4 },
+    { 7, 26, 41, 26, 7 },
+    { 4, 16, 26, 16, 4 },
+    { 1, 4, 7, 4, 1 }
+  };
 
 #define WEIGHTSUM 273
-	// Apply gaussian blurfilter		       
-	for (int i = 2; i < SCALED_SIZE - 2; i++)
+  // Apply gaussian blurfilter		       
+  for (int i = 2; i < SCALED_SIZE - 2; i++)
+    {
+      for (int j = 2; j < SCALED_SIZE - 2; j++)
 	{
-		for (int j = 2; j < SCALED_SIZE - 2; j++)
+	  int sum = 0;
+	  for (int k = -2; k < 3; k++)
+	    {
+	      for (int l = -2; l < 3; l++)
 		{
-			int sum = 0;
-			for (int k = -2; k < 3; k++)
-			{
-				for (int l = -2; l < 3; l++)
-				{
-					sum += w[2 + k][2 + l] * scaled_heatmap[i + k][j + l];
-				}
-			}
-			int value = sum / WEIGHTSUM;
-			blurred_heatmap[i][j] = 0x00FF0000 | value << 24;
+		  sum += w[2 + k][2 + l] * scaled_heatmap[i + k][j + l];
 		}
+	    }
+	  int value = sum / WEIGHTSUM;
+	  blurred_heatmap[i][j] = 0x00FF0000 | value << 24;
 	}
+    }
 }
 
 int Ped::Model::getHeatmapSize() const {
-	return SCALED_SIZE;
+  return SCALED_SIZE;
 }
