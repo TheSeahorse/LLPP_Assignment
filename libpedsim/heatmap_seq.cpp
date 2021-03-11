@@ -105,27 +105,23 @@ void Ped::Model::updateHeatmapSeq()
   updateScaledHeatmap(hm, shm, SIZE, CELLSIZE);
   cudaDeviceSynchronize();
 
-  
-  
-  
-  
-
-  // 	// Scale the data for visual representation
-  // for (int y = 0; y < SIZE; y++)
-  //   {
-  //     for (int x = 0; x < SIZE; x++)
-	// {
-	//   int value = heatmap[y][x];
-	//   for (int cellY = 0; cellY < CELLSIZE; cellY++)
-	//     {
-	//       for (int cellX = 0; cellX < CELLSIZE; cellX++)
-	// 	{
-	// 	  scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
-	// 	}
-	//     }
-	// }
-  //   }
-
+  // Scale the data for visual representation
+  /*
+  for (int y = 0; y < SIZE; y++)
+    {
+      for (int x = 0; x < SIZE; x++)
+	{
+	  int value = heatmap[y][x];
+	  for (int cellY = 0; cellY < CELLSIZE; cellY++)
+	    {
+	      for (int cellX = 0; cellX < CELLSIZE; cellX++)
+		{
+		  scaled_heatmap[y * CELLSIZE + cellY][x * CELLSIZE + cellX] = value;
+		}
+	    }
+	}
+    }
+  */
   // Weights for blur filter
   const int w[5][5] = {
     { 1, 4, 7, 4, 1 },
