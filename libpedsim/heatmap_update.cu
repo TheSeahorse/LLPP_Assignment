@@ -14,7 +14,7 @@ void fadeHeat(int *d_heatmap, int size)
     
     int row = blockIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
-    if (col < size)
+    if (col < size*size)
     {
         d_heatmap[row*size+col] = (int)round(d_heatmap[row*size+col] * 0.80);
     }
@@ -25,11 +25,9 @@ void heatIntensify(int *d_heatmap, int *x, int *y, int agent_size, int size)
 {
     int row = blockIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x; 
-    if (col >= 0 && col < size && row >= 0 && row < size)
+    if (col >= 0 && col < agent_size)
     {
-      //d_heatmap[y[col]*size + x[col]] = 255;
-      //d_heatmap[row*size+col] = 255;
-      d_heatmap[50*size+150] = 255;
+      d_heatmap[y[col]*size + x[col]] += 40;
     }	
 }
 
@@ -72,7 +70,7 @@ void updateHeatFade(int *heatmap, int SIZE)
   // printf("after malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
   cudaMemcpy(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
   // printf("after HostToDevice: %s\n", cudaGetErrorString(cudaGetLastError()));
-  fadeHeat<<<(SIZE*SIZE)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, SIZE*SIZE);
+  fadeHeat<<<(SIZE*SIZE)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, SIZE);
   // printf("after fadeHeat: %s\n", cudaGetErrorString(cudaGetLastError()));
   cudaMemcpy(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
   // printf("after DeviceToHost: %s\n", cudaGetErrorString(cudaGetLastError()));
@@ -93,7 +91,7 @@ void updateHeatIntensity(int *heatmap, int *x, int *y, int agent_size, int SIZE)
   cudaMemcpy(d_x, x, agent_size*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_y, y, agent_size*sizeof(int), cudaMemcpyHostToDevice);
 
-  heatIntensify<<<(agent_size)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, d_x, d_y, agent_size, SIZE*SIZE);
+  heatIntensify<<<(agent_size)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, d_x, d_y, agent_size, SIZE);
 
   cudaMemcpy(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
   cudaMemcpy(x, d_x, agent_size*sizeof(int), cudaMemcpyDeviceToHost);
