@@ -43,6 +43,7 @@ namespace Ped{
 	std::vector<float> destY;
 	std::vector<float> destR;
 	std::vector<bool> reachedDest;
+	
 
 
 	  
@@ -76,7 +77,7 @@ namespace Ped{
 		// should be used for calculating the desired positions of
 		// agents (Assignment 1)
 		IMPLEMENTATION implementation;
-
+		int num_threads;
 		// The agents in this scenario
 		std::vector<Tagent*> agents;
 		
