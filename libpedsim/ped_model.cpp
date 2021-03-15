@@ -37,7 +37,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
 
   // Set up heatmap (relevant for Assignment 4)
   setupHeatmapSeq();
-
   for (int i = 0; i < agents.size(); i++)
     {
       if (agents[i]->getX() < 80)
@@ -71,17 +70,31 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   this->destY.resize(nr_agents);
   this->destR.resize(nr_agents);
 
+  // Calculating vector_size
+  int vector_size = agents.size();
+  int rest = vector_size % 4;
+  vector_size = vector_size + rest;
+
+  // Resizing the vectors
+  this->agentX.resize(vector_size); 
+  this->agentY.resize(vector_size);
+  this->destX.resize(vector_size);
+  this->destY.resize(vector_size);
+  this->destR.resize(vector_size);
+  this->reachedDest.resize(vector_size);
+  // Populating the vectors
   for (int i = 0; i < agents.size(); i++)
     {
       // printf("size: %d, i:%d\n", nr_agents, i);
       agents[i]->getStartDestination();
-	  agents[i]->computeNextDesiredPosition();
+      agents[i]->computeNextDesiredPosition();
 
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
       this->destX[i] = agents[i]->destination->getx();
       this->destY[i] = agents[i]->destination->gety();
       this->destR[i] = agents[i]->destination->getr();
+      this->reachedDest[i] = (float)0;
     }
 }
 
@@ -99,28 +112,41 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent *> agents
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 8; //change this variable to chose number of threads we run on
-
+  int num_threads = 4; //change this variable to chose number of threads we run on
+  
   std::vector<Tagent *> agents = getAgents();
   switch (this->implementation)
     {
     case SEQ:
       {
+	// NO COLLISION
+	computeAgentPositions(0, agents.size(), agents);
+
+	// COLLISION
+	/*
+	for (int i = 0; i < agents.size(); i++)
+	  {
+	    agents[i]->computeNextDesiredPosition();
+	    move(agents[i], agents, tempAgent);
+	  }
+	*/
+	
+	// CUDA VERSION
+	/*
 	std::vector<Tagent *> tempAgent;
 	for (int i = 0; i < agents.size(); i++)
 	  {
 	    agents[i]->computeNextDesiredPosition();
 	    move(agents[i], agents, tempAgent);
 	  }
-		// tickTaskBased(num_threads);
-	  	updateHeatmapSeq();
-	//computeAgentPositions(0, agents.size(), agents);
+	updateHeatmapSeq();
+	*/
 	break;
       }
     case OMP:
       {
 	omp_set_num_threads(num_threads);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for
 	for (int i = 0; i < agents.size(); i++)
 	  {
 	    agents[i]->computeNextDesiredPosition();
@@ -163,18 +189,18 @@ void Ped::Model::tick()
     case CUDA:
       {
 #pragma omp parallel
-  {
+	{
 #pragma omp single nowait
-    {
+	  {
 #pragma omp task
-      {
-		updateHeatmapSeq();
+	    {
+	      updateHeatmapSeq();
+	    }
+	    tickTaskBased(num_threads);
+#pragma omp taskwait
 	  }
-		tickTaskBased(num_threads);
-	#pragma omp taskwait
 	}
-	}
-		break;
+	break;
       }
     case VECTOR:
       {
@@ -230,7 +256,6 @@ void Ped::Model::tick()
 
 void Ped::Model::tickTaskBased(int num_threads)
 {
-	// printf("Starting tickTaskBased\n");
   omp_set_num_threads(num_threads);
 #pragma omp parallel
   {
@@ -307,7 +332,6 @@ void Ped::Model::tickTaskBased(int num_threads)
 
 
   }
-//   updateHeatmapSeq();
   int largestArray = (int)std::max(std::max(this->tempSW.size(),this->tempNW.size()),std::max(this->tempSE.size(),this->tempNE.size()));
 
   std::vector<Ped::Tagent *> allTemps;
@@ -345,7 +369,6 @@ void Ped::Model::tickTaskBased(int num_threads)
   this->tempNE.clear();
   this->tempSW.clear();
   this->tempNW.clear();   
-//   printf("Finished tickTaskBased\n"); 
 }
 
 

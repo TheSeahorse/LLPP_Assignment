@@ -49,7 +49,7 @@ namespace Ped {
     void addWaypoint(Twaypoint* wp);
 
     Twaypoint* getStartDestination();
-
+    Twaypoint* newDestination();
     // Returns the next destination to visit
     Twaypoint* getNextDestination();
 

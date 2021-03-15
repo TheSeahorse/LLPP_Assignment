@@ -37,15 +37,12 @@ namespace Ped{
 	  // Returns the agents of this scenario
 	  const std::vector<Tagent*> getAgents() const { return agents; };
 	  
-	std::vector<float> agentX;
-	std::vector<float> agentY;
-	std::vector<float> destX;
-	std::vector<float> destY;
-	std::vector<float> destR;
-	std::vector<bool> reachedDest;
-	
-
-
+	  std::vector<float> agentX;
+	  std::vector<float> agentY;
+	  std::vector<float> destX;
+	  std::vector<float> destY;
+	  std::vector<float> destR;
+	  std::vector<float> reachedDest;
 	  
 	  //const std::vector<float> getAgentX() const {return agentX;};
 	  //const std::vector<float> getAgentY() const {return agentY;};

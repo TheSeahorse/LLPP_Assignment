@@ -47,6 +47,14 @@ void Ped::Tagent::addWaypoint(Twaypoint* wp) {
 	waypoints.push_back(wp);
 }
 
+Ped::Twaypoint* Ped::Tagent::newDestination() {
+    waypoints.push_back(destination);
+    Ped::Twaypoint* nextDestination = waypoints.front();
+    waypoints.pop_front();
+    destination = nextDestination;
+    return destination;
+}
+
 Ped::Twaypoint* Ped::Tagent::getStartDestination() {
   Ped::Twaypoint* nextDestination = waypoints.front();
   waypoints.pop_front();
