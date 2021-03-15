@@ -36,7 +36,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   this->implementation = implementation;
 
   // Set up heatmap (relevant for Assignment 4)
-  setupHeatmapSeq();
+  // setupHeatmapSeq();
 
   for (int i = 0; i < agents.size(); i++)
     {
@@ -88,8 +88,8 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   for (int i = 0; i < agents.size(); i++)
     {
       // printf("size: %d, i:%d\n", nr_agents, i);
-      agents[i]->getStartDestination();
-	  agents[i]->computeNextDesiredPosition();
+      // agents[i]->getStartDestination();
+      // agents[i]->computeNextDesiredPosition();
 
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
