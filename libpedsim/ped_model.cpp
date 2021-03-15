@@ -36,8 +36,7 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   this->implementation = implementation;
 
   // Set up heatmap (relevant for Assignment 4)
-  // setupHeatmapSeq();
-
+  setupHeatmapSeq();
   for (int i = 0; i < agents.size(); i++)
     {
       if (agents[i]->getX() < 80)
@@ -83,13 +82,12 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   this->destY.resize(vector_size);
   this->destR.resize(vector_size);
   this->reachedDest.resize(vector_size);
-
   // Populating the vectors
   for (int i = 0; i < agents.size(); i++)
     {
       // printf("size: %d, i:%d\n", nr_agents, i);
-      // agents[i]->getStartDestination();
-      // agents[i]->computeNextDesiredPosition();
+      agents[i]->getStartDestination();
+      agents[i]->computeNextDesiredPosition();
 
       this->agentX[i] = agents[i]->getX();
       this->agentY[i] = agents[i]->getY();
@@ -114,8 +112,8 @@ void computeAgentPositions(int start, int end, std::vector<Ped::Tagent *> agents
 void Ped::Model::tick()
 {
   // assuming threads between 2-8
-  int num_threads = 8; //change this variable to chose number of threads we run on
-
+  int num_threads = 4; //change this variable to chose number of threads we run on
+  
   std::vector<Tagent *> agents = getAgents();
   switch (this->implementation)
     {
