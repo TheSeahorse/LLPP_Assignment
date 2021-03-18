@@ -67,6 +67,7 @@ namespace Ped{
 	  // Returns the heatmap visualizing the density of agents
 	  int const * const * getHeatmap() const { return blurred_heatmap; };
 	  int getHeatmapSize() const;
+	  void freeCuda();
 
 	private:
 
@@ -123,10 +124,16 @@ namespace Ped{
 		int *shm;
 		int *bhm;
 
+	        float *destinationsX;
+		float *destinationsY;
+
 		// void setupHeatmap();
 		void setupHeatmapSeq();
+		void setupHeatmapCuda();
 		// void updateHeatmap(int **heatmap, int **scaled_heatmap, int **blurred_heatmap);
+		void updateHeatmapCuda();
 		void updateHeatmapSeq();
+		
 	};
 }
 #endif

@@ -139,6 +139,7 @@ int main(int argc, char*argv[]) {
 	  auto duration_seq = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::steady_clock::now() - start);
 	  fps_seq = ((float)simulation.getTickCount()) / ((float)duration_seq.count())*1000.0;
 	  cout << "Reference time: " << duration_seq.count() << " milliseconds, " << fps_seq << " Frames Per Second." << std::endl;
+	  model.freeCuda();
 	}
 
 	// Change this variable when testing different versions of your code. 
@@ -156,11 +157,10 @@ int main(int argc, char*argv[]) {
 	  auto duration_target = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::steady_clock::now() - start);
 	  fps_target = ((float)simulation.getTickCount()) / ((float)duration_target.count())*1000.0;
 	  cout << "Target time: " << duration_target.count() << " milliseconds, " << fps_target << " Frames Per Second." << std::endl;
+	  model.freeCuda();
 	}
 	std::cout << "\n\nSpeedup: " << fps_target / fps_seq << std::endl;
 			
-			
-
       }
     // Graphics version
     else
@@ -178,14 +178,13 @@ int main(int argc, char*argv[]) {
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::steady_clock::now() - start);
 	float fps = ((float)simulation.getTickCount()) / ((float)duration.count())*1000.0;
 	cout << "Time: " << duration.count() << " milliseconds, " << fps << " Frames Per Second." << std::endl;
-			
+	model.freeCuda();		
       }
 
 		
 
 		
   }
-
   cout << "Done" << endl;
   cout << "Type Enter to quit.." << endl;
   // getchar(); // Wait for any key. Windows convenience...

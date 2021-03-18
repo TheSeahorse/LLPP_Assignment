@@ -36,7 +36,6 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
   this->implementation = implementation;
 
   // Set up heatmap (relevant for Assignment 4)
-  setupHeatmapSeq();
   for (int i = 0; i < agents.size(); i++)
     {
       if (agents[i]->getX() < 80)
@@ -96,6 +95,23 @@ void Ped::Model::setup(std::vector<Ped::Tagent *> agentsInScenario, std::vector<
       this->destR[i] = agents[i]->destination->getr();
       this->reachedDest[i] = (float)0;
     }
+
+  destinationsX = (float *)_mm_malloc(sizeof(float)*agents.size(), 16);
+  destinationsY = (float *)_mm_malloc(sizeof(float)*agents.size(), 16);
+
+  for (unsigned int i = 0; i < agents.size(); i++)
+    {
+      destinationsX[i] = agents[i]->destination->getx();
+      destinationsY[i] = agents[i]->destination->gety();
+    }
+  if (implementation == CUDA) 
+    {
+      setupHeatmapCuda();
+    }
+  else
+    {
+      setupHeatmapSeq();
+    }
 }
 
 // Computes the agent positions for the agents between start and end in the array agents
@@ -120,8 +136,9 @@ void Ped::Model::tick()
     case SEQ:
       {
 	// NO COLLISION
+	/*
 	computeAgentPositions(0, agents.size(), agents);
-
+	*/
 	// COLLISION
 	/*
 	for (int i = 0; i < agents.size(); i++)
@@ -132,7 +149,7 @@ void Ped::Model::tick()
 	*/
 	
 	// CUDA VERSION
-	/*
+	
 	std::vector<Tagent *> tempAgent;
 	for (int i = 0; i < agents.size(); i++)
 	  {
@@ -140,7 +157,7 @@ void Ped::Model::tick()
 	    move(agents[i], agents, tempAgent);
 	  }
 	updateHeatmapSeq();
-	*/
+	
 	break;
       }
     case OMP:
@@ -194,7 +211,7 @@ void Ped::Model::tick()
 	  {
 #pragma omp task
 	    {
-	      updateHeatmapSeq();
+	      updateHeatmapCuda();
 	    }
 	    tickTaskBased(num_threads);
 #pragma omp taskwait

@@ -8,72 +8,71 @@
 #include <cmath>
 #include <omp.h>
 
-
-
-
-__global__
-void fadeHeat(int *d_heatmap, int size)
-{
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index < size*size)
-    {
-        d_heatmap[index] = (int)round(d_heatmap[index] * 0.80);
-    }
-}
+int* d_heatmap;
+int* d_blurred_heatmap;
+int* d_scaled_heatmap;
+int** d_hm;
+int** d_bhm;
+int** d_shm;
+float* d_destinationsX;
+float* d_destinationsY;
 
 __global__
-void heatIntensify(int *d_heatmap, int *x, int *y, int agent_size, int size)
+void updateHeatmap(int **d_hm, float *destinationX, float *destinationY, int agentSize, int size)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x; 
-    if (index >= 0 && index < agent_size)
+  int col = blockIdx.x*blockDim.x + threadIdx.x;
+  int row = blockIdx.y*blockDim.y + threadIdx.y;
+
+  if (row > 1024 || col > 1024) return;
+  d_hm[row][col] = (int)round(d_hm[row][col] * 0.8);
+
+  if (col < agentSize && row == col) 
     {
-      atomicAdd(&d_heatmap[y[index]*size + x[index]], 40);
+      int x = destinationX[row];
+      int y = destinationY[col];
+
+      if (!(x < 0 
+	    || x >= size 
+	    || y < 0 
+	    || y >= size))
+	{
+	  d_hm[y][x] += 40;
+	}
     }	
+  d_hm[row][col] = d_hm[row][col] < 255 ? d_hm[row][col] : 255;
 }
 
+
 __global__
-void setMaxHeat(int *d_heatmap, int size)
+void scaleHeatmap(int **d_hm, int **d_shm, int cellSize)
 {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index < size*size)
+  int col = blockIdx.x*blockDim.x + threadIdx.x;
+  int row = blockIdx.y*blockDim.y + threadIdx.y;
+  if (row > 1024 || col > 1024) return;
+
+  int value = d_hm[row][col];
+  for (int cellY = 0; cellY < cellSize; cellY++)
     {
-      if (d_heatmap[index] >= 255)
-      {
-          d_heatmap[index] = 255;
-      }
+      for (int cellX = 0; cellX < cellSize; cellX++)
+	{
+	  d_shm[row * cellSize + cellY][col * cellSize + cellX] = value;
+	}
     }
 }
 
 
 __global__
-void scaleHeatmap(int *d_heatmap, int *d_scaledHeatmap, int size, int cellSize)
+void blurHeatmap(int **d_shm, int **d_bhm, int scaledSize)
 {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int col = blockIdx.x*blockDim.x + threadIdx.x;
+  int row = blockIdx.y*blockDim.y + threadIdx.y;
+  __shared__ int s[32][32];
 
-  if (index < size*size)
-    {
-      for (int cellY = 0; cellY < cellSize; cellY++)
-	    {
-        int scaledBlock = (blockIdx.x * cellSize + cellY) * blockDim.x * cellSize;
-        for (int cellX = 0; cellX < cellSize; cellX++)
-        {
-          int scaledThread = threadIdx.x * cellSize + cellX;
-          // atomicExch(&d_scaledHeatmap[scaledBlock + scaledThread], d_heatmap[index]);
-          d_scaledHeatmap[scaledBlock + scaledThread] = d_heatmap[index];
-          // # if __CUDA_ARCH__>=200
-          //   printf("cellY: %d, cellX: %d\n", cellY, cellX);
-          // #endif
-        }
-	    }
-    }
-}
+  if (row > scaledSize || col > scaledSize) return;
 
 
-__global__
-void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize)
-{
-    int WEIGHTSUM = 273;
-    const int w[5][5] = {
+  // Weights for blur filter
+  const int w[5][5] = {
     { 1, 4, 7, 4, 1 },
     { 4, 16, 26, 16, 4 },
     { 7, 26, 41, 26, 7 },
@@ -81,121 +80,100 @@ void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize)
     { 1, 4, 7, 4, 1 }
   };
 
-     int i = blockIdx.x * blockDim.x;
-     int modI = (blockIdx.x * blockDim.x + threadIdx.x) % scaledSize;
-     int j = threadIdx.x;
-     int sum = 0;
-     if(modI >= 2 && modI < scaledSize-2 && i+j >= 2*scaledSize && blockIdx.x < 5*scaledSize-2)
-     for (int k = -2; k < 3; k++)
-      {
-        for (int l = -2; l < 3; l++)
-         {       
-           if(i+scaledSize*k >= 2*scaledSize && i+scaledSize*k < scaledSize*scaledSize-2*scaledSize)
-           sum += w[2 + k][2 + l] * d_scaledHeatmap[(i + k) + (j + l)]; 
-         }
-      }
-     int value = sum / WEIGHTSUM;    
-     d_blurredHeatmap[i + j] = 0x00FF0000 | value << 24;
+#define WEIGHTSUM 273
+  int sum = 0;
+  s[threadIdx.y][threadIdx.x] = d_shm[row][col];
+  __syncthreads();
+  for (int k = -2; k < 3; k++)
+    {
+      for (int l = -2; l < 3; l++)
+	{
+	  if (row <= 2 
+	      || row >= scaledSize - 2 
+	      || col <= 2 
+	      || col >= scaledSize - 2) 
+	    {
+	      // pass
+	    }
+	  else if (threadIdx.x >= 29 
+		   || threadIdx.x <= 1 
+		   || threadIdx.y >= 29 
+		   || threadIdx.y <= 1) 
+	    {
+	      sum += w[2 + k][2 + l] * d_shm[row + k][col + l];
+	    }
+	  else 
+	    {
+	      sum += w[2 + k][2 + l] * s[threadIdx.y + k][threadIdx.x + l];
+	    }
+	}
+    }
+  int value = sum / WEIGHTSUM;
+  d_bhm[row][col] = 0x00FF0000 | value << 24;
 }
 
 
-int THREADSPERBLOCK = 1024;
-// Updates the heatmap according to the agent positions
-void updateHeatFade(int *heatmap, int SIZE)
+__global__ 
+void setup(int **heatmap, int **scaled_heatmap, int **blurred_heatmap, int *hm, int *shm, int *bhm, int size, int scaledSize) 
 {
-  int *d_heatmap;
-  cudaMalloc((void **)&d_heatmap, SIZE*SIZE*sizeof(int));
-  // printf("after malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
-  // printf("after HostToDevice: %s\n", cudaGetErrorString(cudaGetLastError()));
-  fadeHeat<<<((SIZE*SIZE)/THREADSPERBLOCK)+1,THREADSPERBLOCK>>>(d_heatmap, SIZE);
-  // printf("after fadeHeat: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
-  // printf("after DeviceToHost: %s\n", cudaGetErrorString(cudaGetLastError()));
+  for (int i = 0; i < size; i++)
+    {
+      heatmap[i] = hm + size * i;
+    }
+  for (int i = 0; i < scaledSize; i++)
+    {
+      scaled_heatmap[i] = shm + scaledSize * i;
+      blurred_heatmap[i] = bhm + scaledSize * i;
+    }
+}
+
+void allocate(int **heatmap, int **blurred_heatmap, int size, int scaledSize)
+{
+  cudaHostAlloc((void **)blurred_heatmap, scaledSize*scaledSize*sizeof(int), cudaHostAllocDefault);
+
+  cudaMalloc(&d_heatmap, size*size * sizeof(int));
+  cudaMalloc(&d_blurred_heatmap, scaledSize*scaledSize * sizeof(int));
+  cudaMalloc(&d_scaled_heatmap, scaledSize*scaledSize * sizeof(int));
+
+  cudaMalloc(&d_hm, size * sizeof(int*));
+  cudaMalloc(&d_bhm, scaledSize * sizeof(int*));
+  cudaMalloc(&d_shm, scaledSize * sizeof(int*));
+
+  cudaMalloc(&d_destinationsX, size * sizeof(float));
+  cudaMalloc(&d_destinationsY, size * sizeof(float));
+
+  cudaMemset(d_heatmap, 0, size*size * sizeof(int));
+  cudaMemset(d_blurred_heatmap, 0, scaledSize*scaledSize * sizeof(int));
+  cudaMemset(d_scaled_heatmap, 0, scaledSize*scaledSize * sizeof(int));
+
+  cudaMemcpy(d_heatmap, *heatmap, size*size * sizeof(int), cudaMemcpyHostToDevice);
+}
+
+void update_heatmap(int **heatmap, int **scaled_heatmap, int **blurred_heatmap, int *hm, int *shm, int *bhm, float *destinationsX, float *destinationsY, int size, int scaledSize, int agentSize)
+{
+  dim3 dimBlock(32, 32);
+  dim3 dimGrid(32, 32);
+  dim3 dimGridBlur(160, 160);
+  
+  cudaMemcpy(d_destinationsX, destinationsX, sizeof(int)*agentSize, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_destinationsY, destinationsY, sizeof(int)*agentSize, cudaMemcpyHostToDevice);
+
+  setup <<<1,1>>> (d_hm, d_shm, d_bhm, d_heatmap, d_scaled_heatmap, d_blurred_heatmap, size, scaledSize);
+
+  updateHeatmap <<< dimGrid, dimBlock>>>(d_hm, d_destinationsX, d_destinationsY, agentSize, size);
+
+  scaleHeatmap <<< dimGrid, dimBlock >> >(d_hm, d_shm, 5);
+
+  blurHeatmap <<<dimGridBlur ,dimBlock>>> (d_shm, d_bhm, scaledSize);
+
+  cudaMemcpyAsync(*blurred_heatmap, d_blurred_heatmap, scaledSize*scaledSize * sizeof(int), cudaMemcpyDeviceToHost);
+}
+
+void free_cuda()
+{
   cudaFree(d_heatmap);
-  // printf("after Free: %s\n", cudaGetErrorString(cudaGetLastError()));
-}
-
-void updateHeatIntensity(int *heatmap, int *x, int *y, int agent_size, int SIZE)
-{
-  int *d_heatmap, *d_x, *d_y;
-  // printf("before malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMalloc((void **)&d_heatmap, SIZE*SIZE*sizeof(int));
-  cudaMalloc((void **)&d_x, agent_size*sizeof(int));
-  cudaMalloc((void **)&d_y, agent_size*sizeof(int));
-  // printf("after malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
-
-  cudaMemcpyAsync(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_x, x, agent_size*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_y, y, agent_size*sizeof(int), cudaMemcpyHostToDevice);
-  // printf("after memcpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  heatIntensify<<<((agent_size)/THREADSPERBLOCK)+1,THREADSPERBLOCK>>>(d_heatmap, d_x, d_y, agent_size, SIZE);
-  // printf("after function: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(x, d_x, agent_size*sizeof(int), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(y, d_y, agent_size*sizeof(int), cudaMemcpyDeviceToHost);
-  // printf("after memcpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaFree(d_heatmap);
-  cudaFree(d_x);
-  cudaFree(d_y);
-  // printf("after free: %s\n", cudaGetErrorString(cudaGetLastError()));
-}
-
-void updateSetMaxHeat(int *heatmap, int SIZE)
-{
-  int *d_heatmap;
-  // printf("before malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMalloc((void **)&d_heatmap, SIZE*SIZE*sizeof(int));
-  // printf("after malloc: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
-  // printf("after memcpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  setMaxHeat<<<((SIZE*SIZE)/THREADSPERBLOCK)+1,THREADSPERBLOCK>>>(d_heatmap, SIZE);
-  // printf("after function: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
-  // printf("after memcpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaFree(d_heatmap);
-  // printf("after free: %s\n", cudaGetErrorString(cudaGetLastError()));
-}
-
-void updateScaledHeatmap(int *heatmap, int *scaledHeatmap, int SIZE, int cellSize)
-{
-  int scaledSizeSquared = SIZE*SIZE*cellSize*cellSize;
-  int *d_heatmap;
-  int *d_scaledHeatmap;
-  // printf("before malloc1: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMalloc((void **)&d_heatmap, SIZE*SIZE*sizeof(int));
-  cudaMalloc((void **)&d_scaledHeatmap, scaledSizeSquared*sizeof(int));
-  // printf("after malloc2: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_scaledHeatmap, scaledHeatmap, scaledSizeSquared*sizeof(int), cudaMemcpyHostToDevice);
-  // printf("after memcpy2: %s\n", cudaGetErrorString(cudaGetLastError()));
-  scaleHeatmap<<<(SIZE*SIZE)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, d_scaledHeatmap, SIZE, cellSize);
-  // printf("after scaleHeatmap: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(heatmap, d_heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpyAsync(scaledHeatmap, d_scaledHeatmap, scaledSizeSquared*sizeof(int), cudaMemcpyDeviceToHost);
-  // printf("after memecpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaFree(d_heatmap);  
-  cudaFree(d_scaledHeatmap);  
-  // printf("after free: %s\n", cudaGetErrorString(cudaGetLastError()));
-}
-
-void updateBlurredHeatmap(int *scaledHeatmap, int *blurredHeatmap, int scaledSize)
-{
-  int *d_scaledHeatmap;
-  int *d_blurredHeatmap;
-  // printf("before malloc1: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMalloc((void **)&d_scaledHeatmap, scaledSize*scaledSize*sizeof(int));
-  cudaMalloc((void **)&d_blurredHeatmap, scaledSize*scaledSize*sizeof(int));
-  // printf("after malloc2: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(d_blurredHeatmap, blurredHeatmap, scaledSize*scaledSize*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_scaledHeatmap, scaledHeatmap, scaledSize*scaledSize*sizeof(int), cudaMemcpyHostToDevice);
-  // printf("after memcpy2: %s\n", cudaGetErrorString(cudaGetLastError()));
-  blurHeatmap<<<(scaledSize*scaledSize)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_scaledHeatmap, d_blurredHeatmap, scaledSize);
-  // printf("after scaleHeatmap: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaMemcpyAsync(blurredHeatmap, d_blurredHeatmap, scaledSize*scaledSize*sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpyAsync(scaledHeatmap, d_scaledHeatmap, scaledSize*scaledSize*sizeof(int), cudaMemcpyDeviceToHost);
-  // printf("after memecpy: %s\n", cudaGetErrorString(cudaGetLastError()));
-  cudaFree(d_blurredHeatmap);  
-  cudaFree(d_scaledHeatmap);  
-  // printf("after free: %s\n", cudaGetErrorString(cudaGetLastError()));  
+  cudaFree(d_scaled_heatmap);
+  cudaFree(d_blurred_heatmap);
+  cudaFree(d_destinationsX);
+  cudaFree(d_destinationsY);
 }
