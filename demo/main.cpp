@@ -12,6 +12,7 @@
 #include "ped_model.h"
 #include "MainWindow.h"
 #include "ParseScenario.h"
+// #include "heatmap_update.cuh"
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -115,7 +116,8 @@ int main(int argc, char*argv[]) {
     MainWindow mainwindow(model);
 
     // Default number of steps to simulate. Feel free to change this.
-    const int maxNumberOfStepsToSimulate = 1000;
+    // const int maxNumberOfStepsToSimulate = 1000;
+    const int maxNumberOfStepsToSimulate = 20;
 		
 				
 

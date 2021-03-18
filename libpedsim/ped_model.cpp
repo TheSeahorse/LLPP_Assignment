@@ -168,7 +168,7 @@ void Ped::Model::tick()
     {
 #pragma omp task
       {
-		updateHeatmapSeq();
+		updateHeatmapCuda();
 	  }
 		tickTaskBased(num_threads);
 	#pragma omp taskwait

@@ -91,6 +91,9 @@ namespace Ped{
 		std::vector<Tagent*> tempSE;
 		std::vector<Tagent*> tempNE;
 
+		int *xArray;
+		int *yArray;
+
 		// The waypoints in this scenario
 		std::vector<Twaypoint*> destinations;
 
@@ -130,6 +133,7 @@ namespace Ped{
 		void setupHeatmapSeq();
 		// void updateHeatmap(int **heatmap, int **scaled_heatmap, int **blurred_heatmap);
 		void updateHeatmapSeq();
+		void updateHeatmapCuda();
 	};
 }
 #endif

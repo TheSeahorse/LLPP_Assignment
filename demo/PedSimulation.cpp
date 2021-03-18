@@ -7,7 +7,7 @@
 #include "PedSimulation.h"
 #include <iostream>
 #include <QApplication>
-
+#include "heatmap_update.cuh"
 #include <stdlib.h>
 
 using namespace std;
@@ -49,6 +49,7 @@ void PedSimulation::runSimulationWithoutQt(int maxNumberOfStepsToSimulate)
 		tickCounter++;
 		model.tick();
 	}
+	freeHeatmaps();
 }
 
 #include "PedSimulation.moc"
