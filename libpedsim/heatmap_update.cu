@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <omp.h>
+#include <chrono> 
 
 int* heatmap;
 int* scaledHeatmap;
@@ -30,7 +31,7 @@ void initHeatmaps(int SIZE, int scaledSize, int agent_size, int *heatmap)
   cudaMemcpy(d_heatmap, heatmap, SIZE*SIZE*sizeof(int), cudaMemcpyHostToDevice);
 
   cudaMemset(d_heatmap, 0, SIZE*SIZE * sizeof(int));
-	cudaMemset(d_scaledHeatmap, 0, scaledSize*scaledSize * sizeof(int));
+  cudaMemset(d_scaledHeatmap, 0, scaledSize*scaledSize * sizeof(int));
   cudaMemset(d_blurredHeatmap, 0, scaledSize*scaledSize * sizeof(int));
 }
 
@@ -46,23 +47,23 @@ void freeHeatmaps()
 __global__
 void updateHeat(int *d_heatmap, int *x, int *y, int agent_size, int size)
 {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int index = row * size + col;
-    if(col > size || row > size)
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+  int index = row * size + col;
+  if(col > size || row > size)
     {
       return;
     }
-    else
+  else
     {
-        d_heatmap[row*size + col] = (int)round(d_heatmap[row*size + col] * 0.80);
-        if (index >= 0 && index < agent_size)
+      d_heatmap[row*size + col] = (int)round(d_heatmap[row*size + col] * 0.80);
+      if (index >= 0 && index < agent_size)
         {
           atomicAdd(&d_heatmap[y[index]*size + x[index]], 40);
         }	
-        if (d_heatmap[index] >= 255)
+      if (d_heatmap[index] >= 255)
         {
-            d_heatmap[index] = 255;
+	  d_heatmap[index] = 255;
         }   
     }
 }
@@ -89,50 +90,51 @@ void scaleHeatmap(int *d_heatmap, int *d_scaledHeatmap, int size, int cellSize)
 
 
 __global__
-void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize, int tileSize)
+void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize)
 {
-    #define WEIGHTSUM 273
-    const int w[5][5] = {
-      { 1, 4, 7, 4, 1 },
-      { 4, 16, 26, 16, 4 },
-      { 7, 26, 41, 26, 7 },
-      { 4, 16, 26, 16, 4 },
-      { 1, 4, 7, 4, 1 }
-    };
-    int ty, tx; ty = threadIdx.y; tx = threadIdx.x;
-    int col; col = blockIdx.x*blockDim.x + tx;
-    int row; row = blockIdx.y*blockDim.y + ty;
-    if (blockIdx.y*blockDim.y + ty > scaledSize || blockIdx.x*blockDim.x + tx > scaledSize) return;
-    __shared__ int sTile[tileSize][tileSize];
+  const int tileSize = 32;
+#define WEIGHTSUM 273
+  const int w[5][5] = {
+    { 1, 4, 7, 4, 1 },
+    { 4, 16, 26, 16, 4 },
+    { 7, 26, 41, 26, 7 },
+    { 4, 16, 26, 16, 4 },
+    { 1, 4, 7, 4, 1 }
+  };
+  int ty, tx; ty = threadIdx.y; tx = threadIdx.x;
+  int col; col = blockIdx.x*blockDim.x + tx;
+  int row; row = blockIdx.y*blockDim.y + ty;
+  if (blockIdx.y*blockDim.y + ty > scaledSize || blockIdx.x*blockDim.x + tx > scaledSize) return;
+  __shared__ int sTile[tileSize][tileSize];
 
-    int sum = 0;
-    sTile[threadIdx.y][threadIdx.x] = d_scaledHeatmap[row*scaledSize+col];
-    __syncthreads();
-    for (int k = -2; k < 3; k++)
-      {
-        for (int l = -2; l < 3; l++)
-         {   
+  int sum = 0;
+  sTile[threadIdx.y][threadIdx.x] = d_scaledHeatmap[row*scaledSize+col];
+  __syncthreads();
+  for (int k = -2; k < 3; k++)
+    {
+      for (int l = -2; l < 3; l++)
+	{   
           if (threadIdx.x <= 29 && threadIdx.x > 1 
-          && threadIdx.y <= 29 && threadIdx.y > 1) {   
+	      && threadIdx.y <= 29 && threadIdx.y > 1) {   
             sum += w[2 + k][2 + l] * sTile[threadIdx.y + k][threadIdx.x + l];
             
           }
-           else
-           {
-            if(row > 2 && row < scaledSize-2 && col > 2 && col < scaledSize-2)
-            {
-              sum += w[2 + k][2 + l] * d_scaledHeatmap[(row*scaledSize + scaledSize*k) + (col + l)]; 
-            }
-           }
-         }
-      }
+	  else
+	    {
+	      if(row > 2 && row < scaledSize-2 && col > 2 && col < scaledSize-2)
+		{
+		  sum += w[2 + k][2 + l] * d_scaledHeatmap[(row*scaledSize + scaledSize*k) + (col + l)]; 
+		}
+	    }
+	}
+    }
       
-     int value = sum / WEIGHTSUM;  
-     d_blurredHeatmap[row * scaledSize + col] = 0x00FF0000 | value << 24;
+  int value = sum / WEIGHTSUM;  
+  d_blurredHeatmap[row * scaledSize + col] = 0x00FF0000 | value << 24;
 }
 
 
-void cudaUpdateHeatmap(int *heatmap, int *x, int *y, int agent_size, int *scaledHeatmap, int SIZE, int cellSize, int *blurredHeatmap, int scaledSize)
+  void cudaUpdateHeatmap(int *heatmap, int *x, int *y, int agent_size, int *scaledHeatmap, int SIZE, int cellSize, int *blurredHeatmap, int scaledSize)
 {
   int THREADSPERBLOCK = 1024;
   int tileSize = 32;
@@ -140,13 +142,13 @@ void cudaUpdateHeatmap(int *heatmap, int *x, int *y, int agent_size, int *scaled
   dim3 dimBlock(tileSize, tileSize);
   dim3 dimGrid(tileSize, tileSize);
   dim3 blurDimGrid(scaledSize/tileSize, scaledSize/tileSize);
-  
-  cudaMemcpyAsync(d_x, x, agent_size*sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_y, y, agent_size*sizeof(int), cudaMemcpyHostToDevice);
 
-  updateHeat<<<dimGrid, dimBlock>>>(d_heatmap, d_x, d_y, agent_size, SIZE);
-  scaleHeatmap<<<(SIZE*SIZE)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, d_scaledHeatmap, SIZE, cellSize);
-  blurHeatmap<<<blurDimGrid, dimBlock>>>(d_scaledHeatmap, d_blurredHeatmap, scaledSize, tileSize);
   
+  updateHeat<<<dimGrid, dimBlock>>>(d_heatmap, d_x, d_y, agent_size, SIZE);
+
+  scaleHeatmap<<<(SIZE*SIZE)/THREADSPERBLOCK,THREADSPERBLOCK>>>(d_heatmap, d_scaledHeatmap, SIZE, cellSize);
+
+  blurHeatmap<<<blurDimGrid, dimBlock>>>(d_scaledHeatmap, d_blurredHeatmap, scaledSize);
+
   cudaMemcpyAsync(blurredHeatmap, d_blurredHeatmap, scaledSize*scaledSize*sizeof(int), cudaMemcpyDeviceToHost);
 }

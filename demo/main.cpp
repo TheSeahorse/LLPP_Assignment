@@ -182,9 +182,6 @@ int main(int argc, char*argv[]) {
 	cout << "Time: " << duration.count() << " milliseconds, " << fps << " Frames Per Second." << std::endl;
 			
       }
-
-		
-
 		
   }
 

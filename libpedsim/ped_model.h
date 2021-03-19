@@ -131,6 +131,7 @@ namespace Ped{
 
 		// void setupHeatmap();
 		void setupHeatmapSeq();
+		void setupHeatmapCuda();
 		// void updateHeatmap(int **heatmap, int **scaled_heatmap, int **blurred_heatmap);
 		void updateHeatmapSeq();
 		void updateHeatmapCuda();
