@@ -143,6 +143,8 @@ void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize)
   dim3 dimGrid(tileSize, tileSize);
   dim3 blurDimGrid(scaledSize/tileSize, scaledSize/tileSize);
 
+  cudaMemcpyAsync(d_x, x, agent_size*sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpyAsync(d_y, y, agent_size*sizeof(int), cudaMemcpyHostToDevice);
   
   updateHeat<<<dimGrid, dimBlock>>>(d_heatmap, d_x, d_y, agent_size, SIZE);
 

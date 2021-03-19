@@ -117,7 +117,7 @@ int main(int argc, char*argv[]) {
 
     // Default number of steps to simulate. Feel free to change this.
     // const int maxNumberOfStepsToSimulate = 1000;
-    const int maxNumberOfStepsToSimulate = 20;
+    const int maxNumberOfStepsToSimulate = 1000;
 		
 				
 
