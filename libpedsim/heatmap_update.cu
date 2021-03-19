@@ -91,7 +91,6 @@ void scaleHeatmap(int *d_heatmap, int *d_scaledHeatmap, int size, int cellSize)
 __global__
 void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize, int tileSize)
 {
-    const int tile = 32;
     #define WEIGHTSUM 273
     const int w[5][5] = {
       { 1, 4, 7, 4, 1 },
@@ -104,7 +103,7 @@ void blurHeatmap(int *d_scaledHeatmap, int *d_blurredHeatmap, int scaledSize, in
     int col; col = blockIdx.x*blockDim.x + tx;
     int row; row = blockIdx.y*blockDim.y + ty;
     if (blockIdx.y*blockDim.y + ty > scaledSize || blockIdx.x*blockDim.x + tx > scaledSize) return;
-    __shared__ int sTile[tile][tile];
+    __shared__ int sTile[tileSize][tileSize];
 
     int sum = 0;
     sTile[threadIdx.y][threadIdx.x] = d_scaledHeatmap[row*scaledSize+col];
@@ -140,7 +139,7 @@ void cudaUpdateHeatmap(int *heatmap, int *x, int *y, int agent_size, int *scaled
   
   dim3 dimBlock(tileSize, tileSize);
   dim3 dimGrid(tileSize, tileSize);
-	dim3 blurDimGrid(scaledSize/tileSize, scaledSize/tileSize);
+  dim3 blurDimGrid(scaledSize/tileSize, scaledSize/tileSize);
   
   cudaMemcpyAsync(d_x, x, agent_size*sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpyAsync(d_y, y, agent_size*sizeof(int), cudaMemcpyHostToDevice);
